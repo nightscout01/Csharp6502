@@ -124,14 +124,42 @@ namespace EMU6502
                 // SEC
                 case 0x38:
                     SEC();
-                    PC += 1;
                     break;
 
                 // TYA
                 case 0x98:
                     TYA();
-                    PC += 1;
                     break;
+
+                // SBC
+                case 0xE9:
+                    SBC(MemoryAddressingMode.Immediate);
+                    break;
+                case 0xE5:
+                    SBC(MemoryAddressingMode.Zero_Page);
+                    break;
+                case 0xF5:
+                    SBC(MemoryAddressingMode.Zero_Page_Indexed_X);
+                    break;
+                case 0xED:
+                    SBC(MemoryAddressingMode.Absolute);
+                    break;
+                case 0xFD:
+                    SBC(MemoryAddressingMode.Absolute_Indexed_X);
+                    break;
+                case 0xF9:
+                    SBC(MemoryAddressingMode.Absolute_Indexed_Y);
+                    break;
+                case 0xE1:
+                    SBC(MemoryAddressingMode.Indexed_Indirect);
+                    break;
+                case 0xF1:
+                    SBC(MemoryAddressingMode.Indirect_Indexed);
+                    break;
+
+
+
+
 
 
 
@@ -272,7 +300,7 @@ namespace EMU6502
         private void SBC(MemoryAddressingMode addressingMode)  // subtract with carry (we subtract the number from this instruction from the value in A)
         {
             ushort memLocation;
-            switch (addressingMode)
+            switch (addressingMode)  // I'm noticing that I can shrink this down. I think I'll shrink the instructions down after I know they work.
             {
                 case MemoryAddressingMode.Immediate:
                     memLocation = GetMemoryAddress(addressingMode);
@@ -280,21 +308,50 @@ namespace EMU6502
                     A = (byte)(A - memory[memLocation]);
                     cycleDelayCounter = 2;
                     break;
+                case MemoryAddressingMode.Absolute:
+                    memLocation = GetMemoryAddress(addressingMode);
+                    SBCFlagHelper(memory[memLocation]);
+                    A = (byte)(A - memory[memLocation]);
+                    cycleDelayCounter = 4;
+                    break;
                 case MemoryAddressingMode.Zero_Page:
                     memLocation = GetMemoryAddress(addressingMode);
                     SBCFlagHelper(memory[memLocation]);
                     A = (byte)(A - memory[memLocation]);
+                    cycleDelayCounter = 3;
                     break;
                 case MemoryAddressingMode.Zero_Page_Indexed_X:
                     memLocation = GetMemoryAddress(addressingMode);
                     SBCFlagHelper(memory[memLocation]);
                     A = (byte)(A - memory[memLocation]);
+                    cycleDelayCounter = 4;
                     break;
-                    //  case MemoryAddressingMode.
-
-
-
-
+                case MemoryAddressingMode.Absolute_Indexed_X:
+                    memLocation = GetMemoryAddress(addressingMode);
+                    SBCFlagHelper(memory[memLocation]);
+                    A = (byte)(A - memory[memLocation]);
+                    cycleDelayCounter = 4;
+                    break;
+                case MemoryAddressingMode.Absolute_Indexed_Y:
+                    memLocation = GetMemoryAddress(addressingMode);
+                    SBCFlagHelper(memory[memLocation]);
+                    A = (byte)(A - memory[memLocation]);
+                    cycleDelayCounter = 4;
+                    break;
+                case MemoryAddressingMode.Indexed_Indirect:
+                    memLocation = GetMemoryAddress(addressingMode);
+                    SBCFlagHelper(memory[memLocation]);
+                    A = (byte)(A - memory[memLocation]);
+                    cycleDelayCounter = 6;
+                    break;
+                case MemoryAddressingMode.Indirect_Indexed:
+                    memLocation = GetMemoryAddress(addressingMode);
+                    SBCFlagHelper(memory[memLocation]);
+                    A = (byte)(A - memory[memLocation]);
+                    cycleDelayCounter = 5;
+                    break;
+                default:
+                    throw new ArgumentException("Invalid Addressing Mode passed to STY instruction: " + addressingMode);
             }
             GeneralFlagHelper(A);  // set the proper processor flags to the proper values
         }
@@ -303,6 +360,7 @@ namespace EMU6502
         {
             SetCarryFlag(true);
             cycleDelayCounter = 2;  // somehow this takes two cycles
+            PC += 1;
         }
 
         private void TYA()  // transfer Y to accumulator
@@ -310,6 +368,7 @@ namespace EMU6502
             A = Y;
             GeneralFlagHelper(A);  // apparently we should do this
             cycleDelayCounter = 2;  // somehow this takes two cycles as well
+            PC += 1;
         }
 
         private void pushStack()
