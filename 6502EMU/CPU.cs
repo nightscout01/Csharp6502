@@ -151,14 +151,14 @@ namespace EMU6502
                 case MemoryAddressingMode.Immediate:  // cool switching on enum
                     // okay for this instruction we load the next byte into the X register
                     X = memory[PC + 1];  // load the next byte into the X register
-                    GeneralFlagHelper(X);
+                  //  GeneralFlagHelper(X);
                     PC += 2;  // increment program counter by 2 as specified.
                     cycleDelayCounter = 2;  // this command takes 2 cycles
                     break;
                 case MemoryAddressingMode.Zero_Page:
                     memLocation = memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
                     X = memory[memLocation];  // load the data at that zero page memory location into X
-                    GeneralFlagHelper(X);
+               //     GeneralFlagHelper(X);
                     PC += 2;  // increment program counter as specified
                     cycleDelayCounter = 3;  // this command takes 3 cycles
                     break;
@@ -166,27 +166,28 @@ namespace EMU6502
                     // The value in Y is added to the specified zero page address for a sum address. The value at the sum address is used to perform the computation.
                     memLocation = memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
                     X = memory[memLocation + Y];
-                    GeneralFlagHelper(X);
+               //     GeneralFlagHelper(X);
                     PC += 2;  // increment program counter as specified
                     cycleDelayCounter = 4;
                     break;
                 case MemoryAddressingMode.Absolute:  // a full 16 bit address is specified
                     memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
                     X = memory[memLocation];
-                    GeneralFlagHelper(X);
+                //    GeneralFlagHelper(X);
                     PC += 3;  // increment program counter as specified (this time by 3 bytes instead of 2)
                     cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.
                     break;
                 case MemoryAddressingMode.Absolute_Indexed_Y:
                     memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
                     X = memory[memLocation + Y];  // same as above but we add y to the memory address
-                    GeneralFlagHelper(X);
+                //    GeneralFlagHelper(X);
                     PC += 3;  // increment program counter as specified (this time by 3 bytes instead of 2)
                     cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.  (apparently its 5 if a page boundary is crossed but idk what that means so...)
                     break;
                 default:
                     throw new ArgumentException("Invalid Addressing Mode passed to LDX instruction.");
             }
+            GeneralFlagHelper(X);
         }
 
         private void LDY(MemoryAddressingMode addressingMode)
@@ -197,14 +198,14 @@ namespace EMU6502
                 case MemoryAddressingMode.Immediate:  // cool switching on enum
                     // okay for this instruction we load the next byte into the X register
                     Y = memory[PC + 1];  // load the next byte into the X register
-                    GeneralFlagHelper(Y);
+                //    GeneralFlagHelper(Y);
                     PC += 2;  // increment program counter by 2 as specified.
                     cycleDelayCounter = 2;  // this command takes 2 cycles
                     break;
                 case MemoryAddressingMode.Zero_Page:
                     memLocation = memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
                     Y = memory[memLocation];  // load the data at that zero page memory location into X
-                    GeneralFlagHelper(Y);
+                  //  GeneralFlagHelper(Y);
                     PC += 2;  // increment program counter as specified
                     cycleDelayCounter = 3;  // this command takes 3 cycles
                     break;
@@ -212,27 +213,28 @@ namespace EMU6502
                     // The value in Y is added to the specified zero page address for a sum address. The value at the sum address is used to perform the computation.
                     memLocation = memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
                     Y = memory[memLocation + X];
-                    GeneralFlagHelper(Y);
+                 //   GeneralFlagHelper(Y);
                     PC += 2;  // increment program counter as specified
                     cycleDelayCounter = 4;
                     break;
                 case MemoryAddressingMode.Absolute:  // a full 16 bit address is specified
                     memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
                     Y = memory[memLocation];
-                    GeneralFlagHelper(Y);
+                  //  GeneralFlagHelper(Y);
                     PC += 3;  // increment program counter as specified (this time by 3 bytes instead of 2)
                     cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.
                     break;
                 case MemoryAddressingMode.Absolute_Indexed_Y:
                     memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
                     Y = memory[memLocation + X];  // same as above but we add y to the memory address
-                    GeneralFlagHelper(Y);
+                 //   GeneralFlagHelper(Y);
                     PC += 3;  // increment program counter as specified (this time by 3 bytes instead of 2)
                     cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.  (apparently its 5 if a page boundary is crossed but idk what that means so...)
                     break;
                 default:
                     throw new ArgumentException("Invalid Addressing Mode passed to LDY instruction.");
             }
+            GeneralFlagHelper(Y);  // let's see if we can just put this at the end of the switch statements
         }
 
         private void STX(MemoryAddressingMode addressingMode)  // Store index X in memory  -> Store value in register X into the given memory location 
@@ -285,6 +287,36 @@ namespace EMU6502
             }
         }
 
+        private void SBC(MemoryAddressingMode addressingMode)  // subtract with carry (we subtract the number from this instruction from the value in A)
+        {
+            ushort memLocation;
+            switch (addressingMode)
+            {
+                case MemoryAddressingMode.Immediate:
+                    SBCFlagHelper(memory[PC+1]);  // MUST REMEMBER TO PUT THIS BEFORE THE ACTUAL SUBTRACTION @-@
+                    A = (byte) (A - memory[PC + 1]);
+                //    GeneralFlagHelper(A);  // must remember to set the rest of the flags
+                    cycleDelayCounter = 2;
+                    break;
+                case MemoryAddressingMode.Zero_Page:
+                    memLocation = memory[PC + 1];
+                    SBCFlagHelper(memory[memLocation]);
+                    A = (byte)(A - memory[memLocation]);
+                    break;
+                case MemoryAddressingMode.Zero_Page_Indexed_X:
+                    memLocation = memory[PC + 1];
+                    SBCFlagHelper(memory[memLocation+X]);
+                    A = (byte)(A - memory[memLocation+X]);
+                    break;
+              //  case MemoryAddressingMode.
+
+
+
+
+            }
+            GeneralFlagHelper(A);  // set the proper processor flags to the proper values
+        }
+
         private void SEC()  // set carry flag to 1.
         {
             SetCarryFlag(true);
@@ -304,7 +336,13 @@ namespace EMU6502
         }
 
 
-
+        private void SBCFlagHelper(byte val)  // a helper method to help set the various flags after an SBC command
+        {
+            if(val > A)
+            {
+                SetCarryFlag(false);
+            }
+        }
 
         private void GeneralFlagHelper(byte b)  // this might prove useful, but at least a minor refactor will be required at the end of all this
             // if we want to maintain nice looking code I think.
