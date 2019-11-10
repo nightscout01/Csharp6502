@@ -35,10 +35,10 @@ namespace EMU6502
         private byte A;  // accumulator register
         private int cycleDelayCounter;
         readonly Stack<ushort> stack = new Stack<ushort>();  // we'll just use a stack for our stack why not?
-            // On the 6502, the stack starts at 0x1FF and grows towards 0x100.
-        // 6502 instruction operation codes (opcodes) 
-        // are eight-bits long and have the general form aaabbbcc, where aaa and cc 
-        // define the opcode, and bbb defines the addressing mode.
+                                                             // On the 6502, the stack starts at 0x1FF and grows towards 0x100.
+                                                             // 6502 instruction operation codes (opcodes) 
+                                                             // are eight-bits long and have the general form aaabbbcc, where aaa and cc 
+                                                             // define the opcode, and bbb defines the addressing mode.
 
         // THIS CPU IS NOT MULTITHREADED... duh
         public CPU(byte[] b)
@@ -50,21 +50,55 @@ namespace EMU6502
         }
         public void emulateCycle()
         {
-            if(cycleDelayCounter > 0)  // perhaps we'll get this thing to be cycle accurate :D
+            if (cycleDelayCounter > 0)  // perhaps we'll get this thing to be cycle accurate :D
             {
                 cycleDelayCounter--;
                 return;
             }
             // opcodes are 1 byte, but the number of additional bytes is defined by the opcode itself, so we'll have to increment the program counter by a variable number
-            byte opcode = memory[PC];  // get the opcode
+            byte opcode = memory[PC];  // get the opcode (opcodes are only a byte, how much data is actually used per instruction depends on the instruction)
 
             switch (opcode)  // there's got to be a better way to organize this. 
             {
-               case 0xA2:  // LDX (Load index X with memory)  immediate
+                // LDX
+                case 0xA2:  
                     LDX(MemoryAddressingMode.Immediate);
                     break;
-                    
-                        
+                case 0xA6:
+                    LDX(MemoryAddressingMode.Zero_Page);
+                    break;
+                case 0xB6:
+                    LDX(MemoryAddressingMode.Zero_Page_Indexed_Y);
+                    break;
+                case 0xAE:
+                    LDX(MemoryAddressingMode.Absolute);
+                    break;
+                case 0xBE:
+                    LDX(MemoryAddressingMode.Absolute_Indexed_Y);
+                    break;
+
+                // LDY
+                case 0xA0:
+                    LDY(MemoryAddressingMode.Immediate);
+                    break;
+                case 0xA4:
+                    LDY(MemoryAddressingMode.Zero_Page);
+                    break;
+                case 0xB4:
+                    LDY(MemoryAddressingMode.Zero_Page_Indexed_X);
+                    break;
+                case 0xAC:
+                    LDY(MemoryAddressingMode.Absolute);
+                    break;
+                case 0xBC:
+                    LDY(MemoryAddressingMode.Absolute_Indexed_X);
+                    break;
+
+
+
+
+
+
             }
         }
 
@@ -76,34 +110,87 @@ namespace EMU6502
                 case MemoryAddressingMode.Immediate:  // cool switching on enum
                     // okay for this instruction we load the next byte into the X register
                     X = memory[PC + 1];  // load the next byte into the X register
+                    GeneralFlagHelper(X);
                     PC += 2;  // increment program counter by 2 as specified.
                     cycleDelayCounter = 2;  // this command takes 2 cycles
                     break;
                 case MemoryAddressingMode.Zero_Page:
                     memLocation = memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
                     X = memory[memLocation];  // load the data at that zero page memory location into X
+                    GeneralFlagHelper(X);
                     PC += 2;  // increment program counter as specified
                     cycleDelayCounter = 3;  // this command takes 3 cycles
                     break;
                 case MemoryAddressingMode.Zero_Page_Indexed_Y:
                     // The value in Y is added to the specified zero page address for a sum address. The value at the sum address is used to perform the computation.
                     memLocation = memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
-                    X = memory[memLocation+Y];
+                    X = memory[memLocation + Y];
+                    GeneralFlagHelper(X);
                     PC += 2;  // increment program counter as specified
-                    cycleDelayCounter = 3;
+                    cycleDelayCounter = 4;
                     break;
                 case MemoryAddressingMode.Absolute:  // a full 16 bit address is specified
                     memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
                     X = memory[memLocation];
+                    GeneralFlagHelper(X);
                     PC += 3;  // increment program counter as specified (this time by 3 bytes instead of 2)
                     cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.
                     break;
                 case MemoryAddressingMode.Absolute_Indexed_Y:
                     memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
-                    X = memory[memLocation+Y];  // same as above but we add y to the memory address
+                    X = memory[memLocation + Y];  // same as above but we add y to the memory address
+                    GeneralFlagHelper(X);
                     PC += 3;  // increment program counter as specified (this time by 3 bytes instead of 2)
                     cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.  (apparently its 5 if a page boundary is crossed but idk what that means so...)
                     break;
+                default:
+                    throw new ArgumentException("Invalid Addressing Mode passed to LDX instruction.");
+            }
+        }
+
+        private void LDY(MemoryAddressingMode addressingMode)
+        {
+            ushort memLocation;
+            switch (addressingMode)
+            {
+                case MemoryAddressingMode.Immediate:  // cool switching on enum
+                    // okay for this instruction we load the next byte into the X register
+                    Y = memory[PC + 1];  // load the next byte into the X register
+                    GeneralFlagHelper(Y);
+                    PC += 2;  // increment program counter by 2 as specified.
+                    cycleDelayCounter = 2;  // this command takes 2 cycles
+                    break;
+                case MemoryAddressingMode.Zero_Page:
+                    memLocation = memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
+                    Y = memory[memLocation];  // load the data at that zero page memory location into X
+                    GeneralFlagHelper(Y);
+                    PC += 2;  // increment program counter as specified
+                    cycleDelayCounter = 3;  // this command takes 3 cycles
+                    break;
+                case MemoryAddressingMode.Zero_Page_Indexed_X:
+                    // The value in Y is added to the specified zero page address for a sum address. The value at the sum address is used to perform the computation.
+                    memLocation = memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
+                    Y = memory[memLocation + X];
+                    GeneralFlagHelper(Y);
+                    PC += 2;  // increment program counter as specified
+                    cycleDelayCounter = 4;
+                    break;
+                case MemoryAddressingMode.Absolute:  // a full 16 bit address is specified
+                    memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
+                    Y = memory[memLocation];
+                    GeneralFlagHelper(Y);
+                    PC += 3;  // increment program counter as specified (this time by 3 bytes instead of 2)
+                    cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.
+                    break;
+                case MemoryAddressingMode.Absolute_Indexed_Y:
+                    memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
+                    Y = memory[memLocation + X];  // same as above but we add y to the memory address
+                    GeneralFlagHelper(Y);
+                    PC += 3;  // increment program counter as specified (this time by 3 bytes instead of 2)
+                    cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.  (apparently its 5 if a page boundary is crossed but idk what that means so...)
+                    break;
+                default:
+                    throw new ArgumentException("Invalid Addressing Mode passed to LDX instruction.");
             }
         }
 
@@ -115,30 +202,57 @@ namespace EMU6502
 
 
 
+        private void GeneralFlagHelper(byte b)  // this might prove useful, but at least a minor refactor will be required at the end of all this
+            // if we want to maintain nice looking code I think.
+        {
+            ZeroFlagHelper(b);
+            NegativeFlagHelper(b);
+        }
 
 
+        private void ZeroFlagHelper(byte b)
+        {
+            if (b == 0)  // gross.
+            {
+                SetZeroFlag(true);
+            } else
+            {
+                SetZeroFlag(false);
+            }
+        }
 
-
+        private void NegativeFlagHelper(byte b)  // also gross
+        {
+            int res = b >> 7;
+            if(res == 0)
+            {
+                SetSignFlag(false);
+            } else
+            {
+                SetSignFlag(true);
+            }
+        }
 
 
         // HELPER METHODS FOR SETTING THE VARIOUS PROCESSOR FLAGS
 
-        private void SetCarryFlag(bool b) 
-                // his holds the carry out of the most significant bit in any arithmetic operation. 
-            // In subtraction operations however, this flag is cleared - set to 0 - if a borrow is required, set to 1 - if no borrow is required. 
-            // The carry flag is also used in shift and rotate logical operations.
+        private void SetCarryFlag(bool b)
+        // his holds the carry out of the most significant bit in any arithmetic operation. 
+        // In subtraction operations however, this flag is cleared - set to 0 - if a borrow is required, set to 1 - if no borrow is required. 
+        // The carry flag is also used in shift and rotate logical operations.
         {
             if (b)  // yeah I know I could use ternary operators or something but like ehhhh
             {
-                status = (byte) (status | 0x01);  // 0000 0001  we set the carry bit to true 
-            } else
+                status = (byte)(status | 0x01);  // 0000 0001  we set the carry bit to true 
+            }
+            else
             {
                 status = (byte)(status & 0xFE);  // 1111 1110  we set the carry bit to false
             }
         }
 
         private void SetZeroFlag(bool b)  // this is set to 1 when any arithmetic or 
-            // logical operation produces a zero result, and is set to 0 if the result is non-zero.
+                                          // logical operation produces a zero result, and is set to 0 if the result is non-zero.
         {
             if (b)  // yeah I know I could use ternary operators or something but like ehhhh
             {
@@ -198,6 +312,7 @@ namespace EMU6502
             }
         }
 
+        // ALSO CALLED THE NEGATIVE FLAG? Apparently it gets the 7th (MSB) bit of most operations that return a value
         private void SetSignFlag(bool b)  // set when the result of an operation is negative, cleared if its positive
         {
             if (b)  // yeah I know I could use ternary operators or something but like ehhhh
