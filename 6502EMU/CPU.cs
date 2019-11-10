@@ -98,6 +98,44 @@ namespace EMU6502
                     break;
 
 
+                //STX
+                case 0x86:
+                    STX(MemoryAddressingMode.Zero_Page);
+                    break;
+                case 0x96:
+                    STX(MemoryAddressingMode.Zero_Page_Indexed_Y);
+                    break;
+                case 0x8E:
+                    STX(MemoryAddressingMode.Absolute);
+                    break;
+
+
+                //STY
+                case 0x84:
+                    STY(MemoryAddressingMode.Zero_Page);
+                    break;
+                case 0x94:
+                    STY(MemoryAddressingMode.Zero_Page_Indexed_X);
+                    break;
+                case 0x8C:
+                    STY(MemoryAddressingMode.Absolute);
+                    break;
+
+                // SEC
+                case 0x38:
+                    SEC();
+                    break;
+
+                // TYA
+                case 0x98:
+                    TYA();
+                    break;
+
+
+
+                
+
+
 
 
 
@@ -245,6 +283,19 @@ namespace EMU6502
                 default:
                     throw new ArgumentException("Invalid Addressing Mode passed to STY instruction.");
             }
+        }
+
+        private void SEC()  // set carry flag to 1.
+        {
+            SetCarryFlag(true);
+            cycleDelayCounter = 2;  // somehow this takes two cycles
+        }
+
+        private void TYA()  // transfer Y to accumulator
+        {
+            A = Y;
+            GeneralFlagHelper(A);  // apparently we should do this
+            cycleDelayCounter = 2;  // somehow this takes two cycles as well
         }
 
         private void pushStack()
