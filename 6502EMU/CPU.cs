@@ -123,7 +123,7 @@ namespace EMU6502
                     LDA(MemoryAddressingMode.Indexed_Indirect);
                     break;
 
-                //STX
+                // STX
                 case 0x86:
                     STX(MemoryAddressingMode.Zero_Page);
                     break;
@@ -135,7 +135,7 @@ namespace EMU6502
                     break;
 
 
-                //STY
+                // STY
                 case 0x84:
                     STY(MemoryAddressingMode.Zero_Page);
                     break;
@@ -145,6 +145,30 @@ namespace EMU6502
                 case 0x8C:
                     STY(MemoryAddressingMode.Absolute);
                     break;
+
+                // STA
+                case 0x85:
+                    STA(MemoryAddressingMode.Zero_Page);
+                    break;
+                case 0x95:
+                    STA(MemoryAddressingMode.Zero_Page_Indexed_X);
+                    break;
+                case 0x80:
+                    STA(MemoryAddressingMode.Absolute);
+                    break;
+                case 0x90:
+                    STA(MemoryAddressingMode.Absolute_Indexed_X);
+                    break;
+                case 0x99:
+                    STA(MemoryAddressingMode.Absolute_Indexed_Y);
+                    break;
+                case 0x81:
+                    STA(MemoryAddressingMode.Indirect_Indexed);
+                    break;
+                case 0x91:
+                    STA(MemoryAddressingMode.Indexed_Indirect);
+                    break;
+
 
                 // SEC
                 case 0x38:
@@ -381,6 +405,39 @@ namespace EMU6502
                     break;
                 default:
                     throw new ArgumentException("Invalid Addressing Mode passed to STY instruction.");
+            }
+        }
+
+        private void STA(MemoryAddressingMode addressingMode)  // I'm going to try implementing this one in it's shorter form
+        {
+            ushort memLocation;
+            memLocation = GetMemoryAddress(addressingMode);
+            memory[memLocation] = A;
+            switch (addressingMode)
+            {
+                case MemoryAddressingMode.Zero_Page:
+                    cycleDelayCounter = 3;
+                    break;
+                case MemoryAddressingMode.Zero_Page_Indexed_X:
+                    cycleDelayCounter = 4;
+                    break;
+                case MemoryAddressingMode.Absolute:
+                    cycleDelayCounter = 4;
+                    break;
+                case MemoryAddressingMode.Absolute_Indexed_X:
+                    cycleDelayCounter = 5;
+                    break;
+                case MemoryAddressingMode.Absolute_Indexed_Y:
+                    cycleDelayCounter = 5;
+                    break;
+                case MemoryAddressingMode.Indexed_Indirect:
+                    cycleDelayCounter = 6;
+                    break;
+                case MemoryAddressingMode.Indirect_Indexed:
+                    cycleDelayCounter = 6;
+                    break;
+                default:
+                    throw new ArgumentException("Invalid Addressing Mode passed to STY instruction: " + addressingMode);
             }
         }
 
