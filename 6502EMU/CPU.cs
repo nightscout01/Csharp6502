@@ -90,8 +90,19 @@ namespace EMU6502
                     memLocation = memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
                     X = memory[memLocation+Y];
                     PC += 2;  // increment program counter as specified
+                    cycleDelayCounter = 3;
                     break;
-                case MemoryAddressingMode.Absolute:
+                case MemoryAddressingMode.Absolute:  // a full 16 bit address is specified
+                    memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
+                    X = memory[memLocation];
+                    PC += 3;  // increment program counter as specified (this time by 3 bytes instead of 2)
+                    cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.
+                    break;
+                case MemoryAddressingMode.Absolute_Indexed_Y:
+                    memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
+                    X = memory[memLocation+Y];  // same as above but we add y to the memory address
+                    PC += 3;  // increment program counter as specified (this time by 3 bytes instead of 2)
+                    cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.  (apparently its 5 if a page boundary is crossed but idk what that means so...)
                     break;
             }
         }
