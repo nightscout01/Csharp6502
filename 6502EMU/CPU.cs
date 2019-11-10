@@ -22,7 +22,7 @@ namespace EMU6502
     }
     class CPU
     {
-        private byte[] memory;
+        private readonly byte[] memory;
         private ushort PC;  // program counter
         private byte status;  // status reg
         /*
@@ -47,8 +47,11 @@ namespace EMU6502
             Array.Copy(b, 0, memory, 0, b.Length);  // copy the passed in program into RAM if applicable.
             PC = 0;  // set the program counter to 0
             status = (byte)(status | 0x20);  // 0010 0000  we set status bit 5 to 1, as it is not used and should always contain logical 1.
+
+            // there's actually some very specific stuff that goes down here. Apparently it looks for a memory address to jump to at a specific mem address, I should
+            // probably implement that.
         }
-        public void emulateCycle()
+        public void EmulateCycle()
         {
             if (cycleDelayCounter > 0)  // perhaps we'll get this thing to be cycle accurate :D
             {
@@ -190,7 +193,57 @@ namespace EMU6502
                     cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.  (apparently its 5 if a page boundary is crossed but idk what that means so...)
                     break;
                 default:
-                    throw new ArgumentException("Invalid Addressing Mode passed to LDX instruction.");
+                    throw new ArgumentException("Invalid Addressing Mode passed to LDY instruction.");
+            }
+        }
+
+        private void STX(MemoryAddressingMode addressingMode)  // Store index X in memory  -> Store value in register X into the given memory location 
+        {
+            ushort memLocation;
+            switch (addressingMode)
+            {
+                case MemoryAddressingMode.Zero_Page:
+                    memLocation = memory[PC + 1];  // let's hope this zero extends like we expect.
+                    memory[memLocation] = X;  // we store X in that memory location.
+                    cycleDelayCounter = 3;  // takes 3 cycles
+                    break;
+                case MemoryAddressingMode.Zero_Page_Indexed_Y:
+                    memLocation = memory[PC + 1];  // let's hope this zero extends like we expect.
+                    memory[memLocation+Y] = X;  // we store X in that memory location + y.
+                    cycleDelayCounter = 4;  // takes 4 cycles
+                    break;
+                case MemoryAddressingMode.Absolute:
+                    memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // get the 16 bit absolute mem address
+                    memory[memLocation] = X;  // we store X in that memory location + y.
+                    cycleDelayCounter = 4;  // takes 4 cycles
+                    break;
+                default:
+                    throw new ArgumentException("Invalid Addressing Mode passed to STX instruction.");
+            }
+        }
+
+        private void STY(MemoryAddressingMode addressingMode)  // Store index Y in memory  -> Store value in register Y into the given memory location 
+        {
+            ushort memLocation;
+            switch (addressingMode)
+            {
+                case MemoryAddressingMode.Zero_Page:
+                    memLocation = memory[PC + 1];  // let's hope this zero extends like we expect.
+                    memory[memLocation] = Y;  // we store X in that memory location.
+                    cycleDelayCounter = 3;  // takes 3 cycles
+                    break;
+                case MemoryAddressingMode.Zero_Page_Indexed_X:
+                    memLocation = memory[PC + 1];  // let's hope this zero extends like we expect.
+                    memory[memLocation + X] = Y;  // we store X in that memory location + y.
+                    cycleDelayCounter = 4;  // takes 4 cycles
+                    break;
+                case MemoryAddressingMode.Absolute:
+                    memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // get the 16 bit absolute mem address
+                    memory[memLocation] = Y;  // we store X in that memory location + y.
+                    cycleDelayCounter = 4;  // takes 4 cycles
+                    break;
+                default:
+                    throw new ArgumentException("Invalid Addressing Mode passed to STY instruction.");
             }
         }
 
