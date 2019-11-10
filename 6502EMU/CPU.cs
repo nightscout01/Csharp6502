@@ -124,11 +124,13 @@ namespace EMU6502
                 // SEC
                 case 0x38:
                     SEC();
+                    PC += 1;
                     break;
 
                 // TYA
                 case 0x98:
                     TYA();
+                    PC += 1;
                     break;
 
 
@@ -151,37 +153,27 @@ namespace EMU6502
                 case MemoryAddressingMode.Immediate:  // cool switching on enum
                     // okay for this instruction we load the next byte into the X register
                     X = memory[PC + 1];  // load the next byte into the X register
-                                         //  GeneralFlagHelper(X);
-                    PC += 2;  // increment program counter by 2 as specified.
                     cycleDelayCounter = 2;  // this command takes 2 cycles
                     break;
                 case MemoryAddressingMode.Zero_Page:
-                    memLocation = memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
+                    memLocation = GetMemoryAddress(addressingMode);//memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
                     X = memory[memLocation];  // load the data at that zero page memory location into X
-                                              //     GeneralFlagHelper(X);
-                    PC += 2;  // increment program counter as specified
                     cycleDelayCounter = 3;  // this command takes 3 cycles
                     break;
                 case MemoryAddressingMode.Zero_Page_Indexed_Y:
                     // The value in Y is added to the specified zero page address for a sum address. The value at the sum address is used to perform the computation.
-                    memLocation = memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
-                    X = memory[memLocation + Y];
-                    //     GeneralFlagHelper(X);
-                    PC += 2;  // increment program counter as specified
+                    memLocation = GetMemoryAddress(addressingMode);//memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
+                    X = memory[memLocation];
                     cycleDelayCounter = 4;
                     break;
                 case MemoryAddressingMode.Absolute:  // a full 16 bit address is specified
-                    memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
+                    memLocation = GetMemoryAddress(addressingMode);//(ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
                     X = memory[memLocation];
-                    //    GeneralFlagHelper(X);
-                    PC += 3;  // increment program counter as specified (this time by 3 bytes instead of 2)
                     cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.
                     break;
                 case MemoryAddressingMode.Absolute_Indexed_Y:
-                    memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
-                    X = memory[memLocation + Y];  // same as above but we add y to the memory address
-                                                  //    GeneralFlagHelper(X);
-                    PC += 3;  // increment program counter as specified (this time by 3 bytes instead of 2)
+                    memLocation = GetMemoryAddress(addressingMode);//(ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
+                    X = memory[memLocation];  // same as above but we add y to the memory address
                     cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.  (apparently its 5 if a page boundary is crossed but idk what that means so...)
                     break;
                 default:
@@ -197,38 +189,28 @@ namespace EMU6502
             {
                 case MemoryAddressingMode.Immediate:  // cool switching on enum
                     // okay for this instruction we load the next byte into the X register
-                    Y = memory[PC + 1];  // load the next byte into the X register
-                                         //    GeneralFlagHelper(Y);
-                    PC += 2;  // increment program counter by 2 as specified.
+                    Y = memory[GetMemoryAddress(addressingMode)];  // load the next byte into the X register
                     cycleDelayCounter = 2;  // this command takes 2 cycles
                     break;
                 case MemoryAddressingMode.Zero_Page:
-                    memLocation = memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
+                    memLocation = GetMemoryAddress(addressingMode);//memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
                     Y = memory[memLocation];  // load the data at that zero page memory location into X
-                                              //  GeneralFlagHelper(Y);
-                    PC += 2;  // increment program counter as specified
                     cycleDelayCounter = 3;  // this command takes 3 cycles
                     break;
                 case MemoryAddressingMode.Zero_Page_Indexed_X:
                     // The value in Y is added to the specified zero page address for a sum address. The value at the sum address is used to perform the computation.
-                    memLocation = memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
-                    Y = memory[memLocation + X];
-                    //   GeneralFlagHelper(Y);
-                    PC += 2;  // increment program counter as specified
+                    memLocation = GetMemoryAddress(addressingMode);//memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
+                    Y = memory[memLocation];
                     cycleDelayCounter = 4;
                     break;
                 case MemoryAddressingMode.Absolute:  // a full 16 bit address is specified
-                    memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
+                    memLocation = GetMemoryAddress(addressingMode);//(ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
                     Y = memory[memLocation];
-                    //  GeneralFlagHelper(Y);
-                    PC += 3;  // increment program counter as specified (this time by 3 bytes instead of 2)
                     cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.
                     break;
                 case MemoryAddressingMode.Absolute_Indexed_Y:
-                    memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
-                    Y = memory[memLocation + X];  // same as above but we add y to the memory address
-                                                  //   GeneralFlagHelper(Y);
-                    PC += 3;  // increment program counter as specified (this time by 3 bytes instead of 2)
+                    memLocation = GetMemoryAddress(addressingMode);//(ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
+                    Y = memory[memLocation];  // same as above but we add y to the memory address
                     cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.  (apparently its 5 if a page boundary is crossed but idk what that means so...)
                     break;
                 default:
@@ -243,17 +225,17 @@ namespace EMU6502
             switch (addressingMode)
             {
                 case MemoryAddressingMode.Zero_Page:
-                    memLocation = memory[PC + 1];  // let's hope this zero extends like we expect.
+                    memLocation = GetMemoryAddress(addressingMode);//memory[PC + 1];  // let's hope this zero extends like we expect.
                     memory[memLocation] = X;  // we store X in that memory location.
                     cycleDelayCounter = 3;  // takes 3 cycles
                     break;
                 case MemoryAddressingMode.Zero_Page_Indexed_Y:
-                    memLocation = memory[PC + 1];  // let's hope this zero extends like we expect.
+                    memLocation = GetMemoryAddress(addressingMode);//memory[PC + 1];  // let's hope this zero extends like we expect.
                     memory[memLocation + Y] = X;  // we store X in that memory location + y.
                     cycleDelayCounter = 4;  // takes 4 cycles
                     break;
                 case MemoryAddressingMode.Absolute:
-                    memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // get the 16 bit absolute mem address
+                    memLocation = GetMemoryAddress(addressingMode);//(ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // get the 16 bit absolute mem address
                     memory[memLocation] = X;  // we store X in that memory location + y.
                     cycleDelayCounter = 4;  // takes 4 cycles
                     break;
@@ -268,17 +250,17 @@ namespace EMU6502
             switch (addressingMode)
             {
                 case MemoryAddressingMode.Zero_Page:
-                    memLocation = memory[PC + 1];  // let's hope this zero extends like we expect.
+                    memLocation = GetMemoryAddress(addressingMode);
                     memory[memLocation] = Y;  // we store X in that memory location.
                     cycleDelayCounter = 3;  // takes 3 cycles
                     break;
                 case MemoryAddressingMode.Zero_Page_Indexed_X:
-                    memLocation = memory[PC + 1];  // let's hope this zero extends like we expect.
+                    memLocation = GetMemoryAddress(addressingMode); //memory[PC + 1];  // let's hope this zero extends like we expect.
                     memory[memLocation + X] = Y;  // we store X in that memory location + y.
                     cycleDelayCounter = 4;  // takes 4 cycles
                     break;
                 case MemoryAddressingMode.Absolute:
-                    memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // get the 16 bit absolute mem address
+                    memLocation = GetMemoryAddress(addressingMode);//(ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // get the 16 bit absolute mem address
                     memory[memLocation] = Y;  // we store X in that memory location + y.
                     cycleDelayCounter = 4;  // takes 4 cycles
                     break;
@@ -293,20 +275,20 @@ namespace EMU6502
             switch (addressingMode)
             {
                 case MemoryAddressingMode.Immediate:
-                    SBCFlagHelper(memory[PC + 1]);  // MUST REMEMBER TO PUT THIS BEFORE THE ACTUAL SUBTRACTION @-@
-                    A = (byte)(A - memory[PC + 1]);
-                    //    GeneralFlagHelper(A);  // must remember to set the rest of the flags
+                    memLocation = GetMemoryAddress(addressingMode);
+                    SBCFlagHelper(memory[memLocation]);  // MUST REMEMBER TO PUT THIS BEFORE THE ACTUAL SUBTRACTION @-@
+                    A = (byte)(A - memory[memLocation]);
                     cycleDelayCounter = 2;
                     break;
                 case MemoryAddressingMode.Zero_Page:
-                    memLocation = memory[PC + 1];
+                    memLocation = GetMemoryAddress(addressingMode);
                     SBCFlagHelper(memory[memLocation]);
                     A = (byte)(A - memory[memLocation]);
                     break;
                 case MemoryAddressingMode.Zero_Page_Indexed_X:
-                    memLocation = memory[PC + 1];
-                    SBCFlagHelper(memory[memLocation + X]);
-                    A = (byte)(A - memory[memLocation + X]);
+                    memLocation = GetMemoryAddress(addressingMode);
+                    SBCFlagHelper(memory[memLocation]);
+                    A = (byte)(A - memory[memLocation]);
                     break;
                     //  case MemoryAddressingMode.
 
@@ -386,23 +368,28 @@ namespace EMU6502
             {
                 case MemoryAddressingMode.Absolute:
                     memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // get the 16 bit absolute mem address
+                    PC += 3; // increment program counter by 3
                     break;
                 case MemoryAddressingMode.Absolute_Indexed_X:
                     memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // get the 16 bit absolute mem address
                     memLocation += X;
+                    PC += 3;
                     break;
                 case MemoryAddressingMode.Absolute_Indexed_Y:
                     memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // get the 16 bit absolute mem address
                     memLocation += Y;
+                    PC += 3;
                     break;
                 case MemoryAddressingMode.Immediate:
                     memLocation = (ushort)(PC + 1);
+                    PC += 2;
                     break;
                 case MemoryAddressingMode.Indexed_Indirect:
                     memLocation = (ushort)(memory[PC + 1] + X);  // the memory address of the LSB of the memory address we want.
                     LSB = memory[memLocation];
                     MSB = memory[memLocation + 1];
                     memLocation = (ushort)(MSB << 8 | LSB);  // it's little endian? so we have to do this, maybe C#'s casting isn't so bad after all.
+                    PC += 2;
                     // hope that works
                     break;
                 case MemoryAddressingMode.Indirect:  // the instruction contains a 16 bit address which identifies the location of the LSB of another 16 bit 
@@ -411,6 +398,7 @@ namespace EMU6502
                     LSB = memory[memLocation];
                     MSB = memory[memLocation + 1];
                     memLocation = (ushort)(MSB << 8 | LSB);  // it's little endian? so we have to do this, maybe C#'s casting isn't so bad after all.
+                    PC += 3;
                     break;
                 case MemoryAddressingMode.Indirect_Indexed:  // different than Indexed Indirect (eeeeee)
                     //In instruction contains the zero page location of the least significant byte of 16 bit address. 
@@ -419,6 +407,7 @@ namespace EMU6502
                     LSB = memory[memLocation];
                     MSB = memory[memLocation + 1];
                     memLocation = (ushort)(MSB << 8 | LSB);  // it's little endian? so we have to do this, maybe C#'s casting isn't so bad after all.
+                    PC += 2;
                     break;
                 case MemoryAddressingMode.Relative:  // instruction contains a signed 8 bit relative offset.
                     PC += 2;  // increment program counter
@@ -436,12 +425,15 @@ namespace EMU6502
                     break;
                 case MemoryAddressingMode.Zero_Page:
                     memLocation = memory[PC + 1];
+                    PC += 2;
                     break;
                 case MemoryAddressingMode.Zero_Page_Indexed_X:
                     memLocation = (ushort)(memory[PC + 1] + X);
+                    PC += 2;
                     break;
                 case MemoryAddressingMode.Zero_Page_Indexed_Y:
                     memLocation = (ushort)(memory[PC + 1] + Y);
+                    PC += 2;
                     break;
                 default:
                     throw new ArgumentException("Invalid Addressing mode");
