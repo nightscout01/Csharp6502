@@ -97,6 +97,31 @@ namespace EMU6502
                     LDY(MemoryAddressingMode.Absolute_Indexed_X);
                     break;
 
+                // LDA
+                case 0xA9:
+                    LDA(MemoryAddressingMode.Immediate);
+                    break;
+                case 0xA5:
+                    LDA(MemoryAddressingMode.Zero_Page);
+                    break;
+                case 0xB5:
+                    LDA(MemoryAddressingMode.Zero_Page_Indexed_X);
+                    break;
+                case 0xAD:
+                    LDA(MemoryAddressingMode.Absolute);
+                    break;
+                case 0xBD:
+                    LDA(MemoryAddressingMode.Absolute_Indexed_X);
+                    break;
+                case 0xB9:
+                    LDA(MemoryAddressingMode.Absolute_Indexed_Y);
+                    break;
+                case 0xA1:
+                    LDA(MemoryAddressingMode.Indirect_Indexed);
+                    break;
+                case 0xB1:
+                    LDA(MemoryAddressingMode.Indexed_Indirect);
+                    break;
 
                 //STX
                 case 0x86:
@@ -126,9 +151,19 @@ namespace EMU6502
                     SEC();
                     break;
 
+                // CLC
+                case 0x18:
+                    CLC();
+                    break;
+
                 // TYA
                 case 0x98:
                     TYA();
+                    break;
+
+                //TAY
+                case 0xA8:
+                    TAY();
                     break;
 
                 // SBC
@@ -247,6 +282,58 @@ namespace EMU6502
             GeneralFlagHelper(Y);  // let's see if we can just put this at the end of the switch statements
         }
 
+        private void LDA(MemoryAddressingMode addressingMode)  // I can definitely shrink this guy down too, there's a lot of repeated code. 
+        {
+            ushort memLocation;
+            switch (addressingMode)
+            {
+                case MemoryAddressingMode.Immediate:  // cool switching on enum
+                    // okay for this instruction we load the next byte into the X register
+                    A = memory[GetMemoryAddress(addressingMode)];  // load the next byte into the A register
+                    cycleDelayCounter = 2;  // this command takes 2 cycles
+                    break;
+                case MemoryAddressingMode.Zero_Page:
+                    memLocation = GetMemoryAddress(addressingMode);//memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
+                    A = memory[memLocation];  // load the data at that zero page memory location into A
+                    cycleDelayCounter = 3;  // this command takes 3 cycles
+                    break;
+                case MemoryAddressingMode.Zero_Page_Indexed_X:
+                    // The value in X is added to the specified zero page address for a sum address. The value at the sum address is used to perform the computation.
+                    memLocation = GetMemoryAddress(addressingMode);//memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
+                    A = memory[memLocation];
+                    cycleDelayCounter = 4;
+                    break;
+                case MemoryAddressingMode.Absolute:  // a full 16 bit address is specified
+                    memLocation = GetMemoryAddress(addressingMode);//(ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
+                    A = memory[memLocation];
+                    cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.
+                    break;
+                case MemoryAddressingMode.Absolute_Indexed_X:  // add 1 if page boundary crossed (eeeee)
+                    memLocation = GetMemoryAddress(addressingMode);//(ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
+                    A = memory[memLocation];  // same as above but we add y to the memory address
+                    cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.  (apparently its 5 if a page boundary is crossed but idk what that means so...)
+                    break;
+                case MemoryAddressingMode.Absolute_Indexed_Y:
+                    memLocation = GetMemoryAddress(addressingMode);//(ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
+                    A = memory[memLocation];  // same as above but we add y to the memory address
+                    cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.  (apparently its 5 if a page boundary is crossed but idk what that means so...)
+                    break;
+                case MemoryAddressingMode.Indexed_Indirect:
+                    memLocation = GetMemoryAddress(addressingMode);//(ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
+                    A = memory[memLocation];  // same as above but we add y to the memory address
+                    cycleDelayCounter = 6;
+                    break;
+                case MemoryAddressingMode.Indirect_Indexed:
+                    memLocation = GetMemoryAddress(addressingMode);//(ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
+                    A = memory[memLocation];  // same as above but we add y to the memory address
+                    cycleDelayCounter = 5;  // 6 if page boundary crossed but idk
+                    break;
+                default:
+                    throw new ArgumentException("Invalid Addressing Mode passed to LDA instruction.");
+            }
+            GeneralFlagHelper(A);  // let's see if we can just put this at the end of the switch statements
+        }
+
         private void STX(MemoryAddressingMode addressingMode)  // Store index X in memory  -> Store value in register X into the given memory location 
         {
             ushort memLocation;
@@ -363,10 +450,25 @@ namespace EMU6502
             PC += 1;
         }
 
+        private void CLC()  // set carry flag to 0
+        {
+            SetCarryFlag(false);
+            cycleDelayCounter = 2;
+            PC += 1;
+        }
+
         private void TYA()  // transfer Y to accumulator
         {
             A = Y;
             GeneralFlagHelper(A);  // apparently we should do this
+            cycleDelayCounter = 2;  // somehow this takes two cycles as well
+            PC += 1;
+        }
+
+        private void TAY()  // transfer accumulator to Y
+        {
+            Y = A;
+            GeneralFlagHelper(Y);  // apparently we should do this
             cycleDelayCounter = 2;  // somehow this takes two cycles as well
             PC += 1;
         }
