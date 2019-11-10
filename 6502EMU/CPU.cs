@@ -13,11 +13,12 @@ namespace EMU6502
         Absolute = 4,
         Zero_Page = 5,
         Indirect = 6,
-        Absolute_Indexed = 7,
-        Zero_Page_Indexed_X = 8,
-        Zero_Page_Indexed_Y = 9,
-        Indexed_Indirect = 10,
-        Indirect_Indexed = 11
+        Absolute_Indexed_X = 7,
+        Absolute_Indexed_Y = 8,
+        Zero_Page_Indexed_X = 9,
+        Zero_Page_Indexed_Y = 10,
+        Indexed_Indirect = 11,
+        Indirect_Indexed = 12
     }
     class CPU
     {
@@ -89,6 +90,8 @@ namespace EMU6502
                     memLocation = memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
                     X = memory[memLocation+Y];
                     PC += 2;  // increment program counter as specified
+                    break;
+                case MemoryAddressingMode.Absolute:
                     break;
             }
         }
