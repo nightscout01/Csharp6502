@@ -3,6 +3,21 @@ using System.Collections.Generic;
 
 namespace EMU6502
 {
+
+    enum MemoryAddressingMode  // this is just the worst
+    {
+        Accumulator = 0,
+        Immediate = 1,
+        Implied = 2,
+        Relative = 3,
+        Absolute = 4,
+        Zero_Page = 5,
+        Indirect = 6,
+        Absolute_Indexed = 7,
+        Zero_Page_Indexed = 8,
+        Indexed_Indirect = 9,
+        Indirect_Indexed = 10
+    }
     class CPU
     {
         byte[] memory;
@@ -32,7 +47,14 @@ namespace EMU6502
         }
         public void emulateCycle()
         {
-            
+            // opcodes are 1 byte, but the number of additional bytes is defined by the opcode itself, so we'll have to increment the program counter by a variable number
+            byte opcode = memory[PC];  // get the opcode
+
+            switch (opcode)  // there's got to be a better way to organize this. 
+            {
+              //  case 0x69:  // 
+                        
+            }
         }
 
         private void pushStack()
@@ -40,7 +62,10 @@ namespace EMU6502
 
         }
 
-        private void SetCarryFlag(bool b)
+        private void SetCarryFlag(bool b) 
+                // his holds the carry out of the most significant bit in any arithmetic operation. 
+            // In subtraction operations however, this flag is cleared - set to 0 - if a borrow is required, set to 1 - if no borrow is required. 
+            // The carry flag is also used in shift and rotate logical operations.
         {
             if (b)  // yeah I know I could use ternary operators or something but like ehhhh
             {
@@ -51,7 +76,8 @@ namespace EMU6502
             }
         }
 
-        private void SetZeroFlag(bool b)
+        private void SetZeroFlag(bool b)  // this is set to 1 when any arithmetic or 
+            // logical operation produces a zero result, and is set to 0 if the result is non-zero.
         {
             if (b)  // yeah I know I could use ternary operators or something but like ehhhh
             {
