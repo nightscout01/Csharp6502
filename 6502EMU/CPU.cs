@@ -20,6 +20,20 @@ namespace EMU6502
         Indexed_Indirect = 11,
         Indirect_Indexed = 12
     }
+
+    enum CPUFlag  // this could come in handy
+    {
+        C = 0,
+        Z = 1,
+        I = 2,
+        D = 3,
+        B = 4,
+        UNUSED_RESERVED = 5,
+        V = 6,
+        S = 7,
+    }
+
+
     class CPU
     {
         private bool initialized;   // a cheap hack, but I believe it's needed for sanity checking.
@@ -200,7 +214,7 @@ namespace EMU6502
                 case 0x80:
                     STA(MemoryAddressingMode.Absolute);
                     break;
-                case 0x90:
+                case 0x9D:
                     STA(MemoryAddressingMode.Absolute_Indexed_X);
                     break;
                 case 0x99:
@@ -325,6 +339,15 @@ namespace EMU6502
                 case 0xD0:
                     BNE();
                     break;
+                case 0x90:
+                    BCC();
+                    break;
+                case 0xB0:
+                    BCS();
+                    break;
+
+
+
 
 
 
@@ -625,6 +648,7 @@ namespace EMU6502
                 default:
                     throw new ArgumentException("Invalid Addressing Mode passed to STY instruction: " + addressingMode);
             }
+            GeneralFlagHelper(A);
         }
 
         private void SBC(MemoryAddressingMode addressingMode)  // subtract with carry (we subtract the number from this instruction from the value in A)
@@ -738,45 +762,70 @@ namespace EMU6502
             // GENERATE NON MASKABLE INTERRUPT OR SOMETHING 
         }
 
+        // we can probably shrink the branch statements because there is a lot of repeated code, but I'll do that later.
+
         private void BNE()  // branch on result not 0  (equivelent to jnz in x86-64 I think... 351 gang rise up)
         {
             PC += 2;
-            //Console.WriteLine(GetZeroFlag());
             cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
             if (GetZeroFlag() == 0)  // we need to branch if the zero flag is not set (i.e. the result is not 0)
             {
-                PC--;
-                if (memory[PC] > 0x7f) {
-                    PC -= (ushort)(~memory[PC] & 0x00ff);
-                } else
-                {
-                    PC += (ushort)(memory[PC] & 0x00ff);
-                }
-                cycleDelayCounter = 3;  // it's 3 cycles if there is a jump
-                Console.WriteLine("current PC is: {0:X}",PC);
-                //GetMemoryAddress(MemoryAddressingMode.Relative);  // currently just using MemoryAddressingMode.Relative on GetMemoryAddress performs
-                // a jump.
+                BranchHelper();  // perform the branch
             } else
             {
                 cycleDelayCounter = 2;
             }
         }
 
+        private void BCC()  // branch on carry flag 0
+        {
+            PC += 2;
+            //Console.WriteLine(GetZeroFlag());
+            cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
+            if (GetCarryFlag() == 0)  // we need to branch if the zero flag is not set (i.e. the result is not 0)
+            {
+                BranchHelper();  // perform the branch
+            }
+            else
+            {
+                cycleDelayCounter = 2;
+            }
+        }
+
+        private void BCS()  // branch on carry flag 1
+        {
+            PC += 2;
+            //Console.WriteLine(GetZeroFlag());
+            cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
+            if (GetCarryFlag() == 1)  // we need to branch if the zero flag is not set (i.e. the result is not 0)
+            {
+                BranchHelper();  // perform the actual branch
+            }
+            else
+            {
+                cycleDelayCounter = 2;
+            }
+        }
+
+        private void BranchHelper()  // this method actually executes a branch. All the branch actions are the same, only the conditionals are different.
+        {
+            PC--;
+            if (memory[PC] > 0x7f)
+            {
+                PC -= (ushort)(~memory[PC] & 0x00ff);
+            }
+            else
+            {
+                PC += (ushort)(memory[PC] & 0x00ff);
+            }
+            cycleDelayCounter = 3;  // it's 3 cycles if there is a jump
+            Console.WriteLine("current PC is: {0:X}", PC);
+        }
+
         private void NOP()
         {
             PC += 1;  // no operation, just increment program counter
         }
-
-        private void pushStack()
-        {
-
-        }
-
-        private void ADCFlagHelper(byte val)
-        {
-
-        }
-
 
         private void SBCFlagHelper(byte val)  // a helper method to help set the various flags after an SBC command
         {
