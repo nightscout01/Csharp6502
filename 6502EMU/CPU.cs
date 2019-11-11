@@ -185,9 +185,14 @@ namespace EMU6502
                     TYA();
                     break;
 
-                //TAY
+                // TAY
                 case 0xA8:
                     TAY();
+                    break;
+
+                // DEY
+                case 0x88:
+                    DEY();
                     break;
 
                 // ADC
@@ -596,6 +601,14 @@ namespace EMU6502
         private void TAY()  // transfer accumulator to Y
         {
             Y = A;
+            GeneralFlagHelper(Y);  // apparently we should do this
+            cycleDelayCounter = 2;  // somehow this takes two cycles as well
+            PC += 1;
+        }
+
+        private void DEY()  // decrement Y by 1
+        {
+            Y--;
             GeneralFlagHelper(Y);  // apparently we should do this
             cycleDelayCounter = 2;  // somehow this takes two cycles as well
             PC += 1;
