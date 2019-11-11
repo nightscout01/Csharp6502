@@ -247,7 +247,10 @@ namespace EMU6502
                     SBC(MemoryAddressingMode.Indirect_Indexed);
                     break;
 
-
+                // BNE   (maybe all the conditional branches)
+                case 0xD0:
+                    BNE();
+                    break;
 
 
 
@@ -614,6 +617,16 @@ namespace EMU6502
             PC += 1;
         }
 
+        private void BNE()  // branch on result not 0  (equivelent to jnz in x86-64 I think... 351 gang rise up)
+        {
+            cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
+            if (GetZeroFlag() == 1)  // we need to branch
+            {
+                GetMemoryAddress(MemoryAddressingMode.Relative);  // currently just using MemoryAddressingMode.Relative on GetMemoryAddress performs
+                    // a jump.
+            } 
+        }
+
         private void pushStack()
         {
 
@@ -767,9 +780,14 @@ namespace EMU6502
         }
 
 
-        private byte GetCarryFlag()
+        private byte GetCarryFlag()  // why are we not returning a boolean, well because we need to directly add the result of this to another value.
         {
             return (byte)(status & 0x01);
+        }
+
+        private byte GetZeroFlag()  // should this one return a boolean though because it makes more sense???? 
+        {
+            return (byte)((status >> 1)& 0x01);
         }
 
         private void SetZeroFlag(bool b)  // this is set to 1 when any arithmetic or 
