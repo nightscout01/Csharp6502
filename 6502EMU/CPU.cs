@@ -36,6 +36,10 @@ namespace EMU6502
 
     class CPU
     {
+        /* BIG TODOS:
+         *  V/overflow flag is not set in the ADC instruction, and probably not set anywhere
+         *  Not fully cycle accurate as when we go over a page boundary we're supposed to add an extra cycle, I haven't done that yet.
+         */
         private bool initialized;   // a cheap hack, but I believe it's needed for sanity checking.
         private const bool DEBUG = true;
         private readonly byte[] memory;
@@ -253,6 +257,11 @@ namespace EMU6502
                     DEY();
                     break;
 
+                // DEX
+                case 0xCA:
+                    DEX();
+                    break;
+
                 // NOP
                 case 0xEA:
                     NOP();
@@ -335,7 +344,7 @@ namespace EMU6502
                     AND(MemoryAddressingMode.Indirect_Indexed);
                     break;
 
-                // BNE   (maybe all the conditional branches should go here)
+                // Conditional Branches
                 case 0xD0:
                     BNE();
                     break;
@@ -754,6 +763,17 @@ namespace EMU6502
             PC += 1;
         }
 
+        private void DEX()  // decrement X by 1
+        {
+            if (DEBUG)
+            {
+                Console.WriteLine("DEX");
+            }
+            GeneralFlagHelper(X);  // apparently we should do this
+            cycleDelayCounter = 2;  // somehow this takes two cycles as well
+            PC += 1;
+        }
+
         private void DEY()  // decrement Y by 1
         {
             if (DEBUG)
@@ -765,7 +785,6 @@ namespace EMU6502
             cycleDelayCounter = 2;  // somehow this takes two cycles as well
             PC += 1;
         }
-
         private void BRK()  // generates a non-maskable interrupt
         {
             if (DEBUG)
