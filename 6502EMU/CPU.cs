@@ -565,54 +565,33 @@ namespace EMU6502
                 Console.WriteLine("SBC");
             }
             ushort memLocation;
-            switch (addressingMode)  // I'm noticing that I can shrink this down. I think I'll shrink the instructions down after I know they work.
+            memLocation = GetMemoryAddress(addressingMode);
+            SBCFlagHelper(memory[memLocation]);  // this HAS to go before the subtraction operation
+            A = (byte)(A - memory[memLocation]);
+            switch (addressingMode)
             {
                 case MemoryAddressingMode.Immediate:
-                    memLocation = GetMemoryAddress(addressingMode);
-                    SBCFlagHelper(memory[memLocation]);  // MUST REMEMBER TO PUT THIS BEFORE THE ACTUAL SUBTRACTION @-@
-                    A = (byte)(A - memory[memLocation]);
                     cycleDelayCounter = 2;
                     break;
                 case MemoryAddressingMode.Absolute:
-                    memLocation = GetMemoryAddress(addressingMode);
-                    SBCFlagHelper(memory[memLocation]);
-                    A = (byte)(A - memory[memLocation]);
                     cycleDelayCounter = 4;
                     break;
                 case MemoryAddressingMode.Zero_Page:
-                    memLocation = GetMemoryAddress(addressingMode);
-                    SBCFlagHelper(memory[memLocation]);
-                    A = (byte)(A - memory[memLocation]);
                     cycleDelayCounter = 3;
                     break;
                 case MemoryAddressingMode.Zero_Page_Indexed_X:
-                    memLocation = GetMemoryAddress(addressingMode);
-                    SBCFlagHelper(memory[memLocation]);
-                    A = (byte)(A - memory[memLocation]);
                     cycleDelayCounter = 4;
                     break;
                 case MemoryAddressingMode.Absolute_Indexed_X:
-                    memLocation = GetMemoryAddress(addressingMode);
-                    SBCFlagHelper(memory[memLocation]);
-                    A = (byte)(A - memory[memLocation]);
                     cycleDelayCounter = 4;
                     break;
                 case MemoryAddressingMode.Absolute_Indexed_Y:
-                    memLocation = GetMemoryAddress(addressingMode);
-                    SBCFlagHelper(memory[memLocation]);
-                    A = (byte)(A - memory[memLocation]);
                     cycleDelayCounter = 4;
                     break;
                 case MemoryAddressingMode.Indexed_Indirect:
-                    memLocation = GetMemoryAddress(addressingMode);
-                    SBCFlagHelper(memory[memLocation]);
-                    A = (byte)(A - memory[memLocation]);
                     cycleDelayCounter = 6;
                     break;
                 case MemoryAddressingMode.Indirect_Indexed:
-                    memLocation = GetMemoryAddress(addressingMode);
-                    SBCFlagHelper(memory[memLocation]);
-                    A = (byte)(A - memory[memLocation]);
                     cycleDelayCounter = 5;
                     break;
                 default:
