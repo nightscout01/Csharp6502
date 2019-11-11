@@ -271,7 +271,7 @@ namespace EMU6502
                 case 0x60:
                     ADC(MemoryAddressingMode.Absolute);
                     break;
-                case 0x70:
+                case 0x7D:
                     ADC(MemoryAddressingMode.Absolute_Indexed_X);
                     break;
                 case 0x79:
@@ -344,6 +344,21 @@ namespace EMU6502
                     break;
                 case 0xB0:
                     BCS();
+                    break;
+                case 0xF0:
+                    BEQ();
+                    break;
+                case 0x30:
+                    BMI();
+                    break;
+                case 0x10:
+                    BPL();
+                    break;
+                case 0x50:
+                    BVC();
+                    break;
+                case 0x70:
+                    BVS();
                     break;
 
 
@@ -766,6 +781,10 @@ namespace EMU6502
 
         private void BNE()  // branch on result not 0  (equivelent to jnz in x86-64 I think... 351 gang rise up)
         {
+            if (DEBUG)
+            {
+                Console.WriteLine("BNE");
+            }
             PC += 2;
             cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
             if (GetZeroFlag() == 0)  // we need to branch if the zero flag is not set (i.e. the result is not 0)
@@ -777,12 +796,34 @@ namespace EMU6502
             }
         }
 
+        private void BEQ()
+        {
+            if (DEBUG)
+            {
+                Console.WriteLine("BEQ");
+            }
+            PC += 2;
+            cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
+            if (GetZeroFlag() == 1)  // we need to branch if the zero flag is set (i.e. the result is 0)
+            {
+                BranchHelper();  // perform the branch
+            }
+            else
+            {
+                cycleDelayCounter = 2;
+            }
+        }
+
         private void BCC()  // branch on carry flag 0
         {
+            if (DEBUG)
+            {
+                Console.WriteLine("BCC");
+            }
             PC += 2;
             //Console.WriteLine(GetZeroFlag());
             cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
-            if (GetCarryFlag() == 0)  // we need to branch if the zero flag is not set (i.e. the result is not 0)
+            if (GetCarryFlag() == 0)  // we need to branch if the carry flag is not set
             {
                 BranchHelper();  // perform the branch
             }
@@ -794,12 +835,88 @@ namespace EMU6502
 
         private void BCS()  // branch on carry flag 1
         {
+            if (DEBUG)
+            {
+                Console.WriteLine("BCS");
+            }
             PC += 2;
             //Console.WriteLine(GetZeroFlag());
             cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
-            if (GetCarryFlag() == 1)  // we need to branch if the zero flag is not set (i.e. the result is not 0)
+            if (GetCarryFlag() == 1)  // we need to branch if the carry flag is set
             {
                 BranchHelper();  // perform the actual branch
+            }
+            else
+            {
+                cycleDelayCounter = 2;
+            }
+        }
+
+        private void BMI()  // branch if negative flag is 1.
+        {
+            if (DEBUG)
+            {
+                Console.WriteLine("BMI");
+            }
+            PC += 2;
+            cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
+            if (GetNegativeFlag() == 1)  // we need to branch if the zero flag is set (i.e. the result is 0)
+            {
+                BranchHelper();  // perform the branch
+            }
+            else
+            {
+                cycleDelayCounter = 2;
+            }
+        }
+
+        private void BPL()  // branch if negative flag is 0.
+        {
+            if (DEBUG)
+            {
+                Console.WriteLine("BPL");
+            }
+            PC += 2;
+            cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
+            if (GetNegativeFlag() == 0)  // we need to branch if the zero flag is set (i.e. the result is 0)
+            {
+                BranchHelper();  // perform the branch
+            }
+            else
+            {
+                cycleDelayCounter = 2;
+            }
+        }
+
+        private void BVC()  // branch if overflow flag is 0 (Branch oVerflow Clear)
+        {
+            if (DEBUG)
+            {
+                Console.WriteLine("BVC");
+            }
+            PC += 2;
+            cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
+            if (GetOverflowFlag() == 0)  // we need to branch if the zero flag is set (i.e. the result is 0)
+            {
+                BranchHelper();  // perform the branch
+            }
+            else
+            {
+                cycleDelayCounter = 2;
+            }
+        }
+
+        private void BVS()  // branch if overflow flag is 1 (Branch oVerflow Set)
+        {
+            if (DEBUG)
+            {
+                Console.WriteLine("BVS");
+            }
+            PC += 2;
+            cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
+            if (GetOverflowFlag() == 0)  // we need to branch if the zero flag is set (i.e. the result is 0)
+            {
+                BranchHelper();  // perform the branch
             }
             else
             {
@@ -977,6 +1094,16 @@ namespace EMU6502
         private byte GetZeroFlag()  // should this one return a boolean though because it makes more sense???? 
         {
             return (byte)((status >> 1) & 0x01);
+        }
+
+        private byte GetNegativeFlag()
+        {
+            return (byte)(status >> 7);
+        }
+
+        private byte GetOverflowFlag()
+        {
+            return (byte)((status >> 6)& 0x01);
         }
 
         private void SetZeroFlag(bool b)  // this is set to 1 when any arithmetic or 
