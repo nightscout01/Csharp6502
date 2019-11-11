@@ -296,6 +296,31 @@ namespace EMU6502
                     SBC(MemoryAddressingMode.Indirect_Indexed);
                     break;
 
+                case 0x29:
+                    AND(MemoryAddressingMode.Immediate);
+                    break;
+                case 0x25:
+                    AND(MemoryAddressingMode.Zero_Page);
+                    break;
+                case 0x35:
+                    AND(MemoryAddressingMode.Zero_Page_Indexed_X);
+                    break;
+                case 0x2D:
+                    AND(MemoryAddressingMode.Absolute);
+                    break;
+                case 0x3D:
+                    AND(MemoryAddressingMode.Absolute_Indexed_X);
+                    break;
+                case 0x39:
+                    AND(MemoryAddressingMode.Absolute_Indexed_Y);
+                    break;
+                case 0x21:
+                    AND(MemoryAddressingMode.Indexed_Indirect);
+                    break;
+                case 0x31:
+                    AND(MemoryAddressingMode.Indirect_Indexed);
+                    break;
+
                 // BNE   (maybe all the conditional branches should go here)
                 case 0xD0:
                     BNE();
@@ -561,6 +586,45 @@ namespace EMU6502
                     throw new ArgumentException("Invalid Addressing Mode passed to ADC instruction: " + addressingMode);
             }
             GeneralFlagHelper(A);
+        }
+
+        private void AND(MemoryAddressingMode addressingMode)
+        {
+            if (DEBUG)
+            {
+                Console.WriteLine("AND");
+            }
+            ushort memLocation = GetMemoryAddress(addressingMode);
+            A = (byte)(memory[memLocation] & A);
+            switch (addressingMode)
+            {
+                case MemoryAddressingMode.Immediate:
+                    cycleDelayCounter = 2;
+                    break;
+                case MemoryAddressingMode.Absolute:
+                    cycleDelayCounter = 4;
+                    break;
+                case MemoryAddressingMode.Zero_Page:
+                    cycleDelayCounter = 3;
+                    break;
+                case MemoryAddressingMode.Zero_Page_Indexed_X:
+                    cycleDelayCounter = 4;
+                    break;
+                case MemoryAddressingMode.Absolute_Indexed_X:
+                    cycleDelayCounter = 4;   // 5 when going over a page break
+                    break;
+                case MemoryAddressingMode.Absolute_Indexed_Y:
+                    cycleDelayCounter = 4;   // 5 when going over a page break
+                    break;
+                case MemoryAddressingMode.Indexed_Indirect:
+                    cycleDelayCounter = 6;
+                    break;
+                case MemoryAddressingMode.Indirect_Indexed:
+                    cycleDelayCounter = 5;
+                    break;
+                default:
+                    throw new ArgumentException("Invalid Addressing Mode passed to STY instruction: " + addressingMode);
+            }
         }
 
         private void SBC(MemoryAddressingMode addressingMode)  // subtract with carry (we subtract the number from this instruction from the value in A)
