@@ -1,4 +1,8 @@
-﻿using System;
+﻿// Copyright Maurice Montag 2019
+// All Rights Reserved.
+
+
+using System;
 using System.Collections.Generic;
 
 namespace EMU6502
