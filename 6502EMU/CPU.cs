@@ -94,6 +94,11 @@ namespace EMU6502
             Console.WriteLine("{0:X}",opcode);  // FOR DEBUGGING
             switch (opcode)  // there's got to be a better way to organize this. 
             {
+                // BRK
+                case 0x0:
+                    BRK();
+                    break;
+
                 // LDX
                 case 0xA2:
                     LDX(MemoryAddressingMode.Immediate);
@@ -294,8 +299,8 @@ namespace EMU6502
 
 
                 default:
-                    Console.WriteLine("ERROR: unknown opcode found: {0:X}", opcode);
-                    break;
+                    throw new ArgumentException("ERROR: unknown opcode found: " + opcode);  // it's not going to be hex formatted but it's better
+                        // than nothing
             }
         }
 
@@ -652,12 +657,35 @@ namespace EMU6502
             PC += 1;
         }
 
+        private void BRK()  // generates a non-maskable interrupt
+        {
+            PC += 1;
+            Console.WriteLine(A);  // for DEBUG
+            // GENERATE NON MASKABLE INTERRUPT OR SOMETHING 
+        }
+
         private void BNE()  // branch on result not 0  (equivelent to jnz in x86-64 I think... 351 gang rise up)
         {
+            //Console.WriteLine(GetZeroFlag());
             cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
-            if (GetZeroFlag() == 1)  // we need to branch
+            if (GetZeroFlag() == 0)  // we need to branch if the zero flag is not set (i.e. the result is not 0)
             {
-                GetMemoryAddress(MemoryAddressingMode.Relative);  // currently just using MemoryAddressingMode.Relative on GetMemoryAddress performs
+                byte offset = memory[PC + 1];  // get the offset
+                PC += 2;  // apparently the program counter is actually incremented during the instruction.
+                Console.WriteLine("offset is {0:X}", offset);
+                if (offset > 0x7f)
+                {
+                    int jumpAmount = -1 * (offset - 255);
+                    PC -= (ushort)jumpAmount;
+                   
+                } else
+                {
+                    // else we just add the offset to the program counter
+                    PC += offset;
+                }
+                
+                
+                //GetMemoryAddress(MemoryAddressingMode.Relative);  // currently just using MemoryAddressingMode.Relative on GetMemoryAddress performs
                                                                   // a jump.
             }
             PC += 1;
@@ -765,7 +793,7 @@ namespace EMU6502
                     memLocation = (ushort)(MSB << 8 | LSB);  // it's little endian? so we have to do this, maybe C#'s casting isn't so bad after all.
                     PC += 2;
                     break;
-                case MemoryAddressingMode.Relative:  // instruction contains a signed 8 bit relative offset.
+                case MemoryAddressingMode.Relative:  // instruction contains a signed 8 bit relative offset. Actually maybe let's not use this
                     PC += 2;  // increment program counter
                     byte offset = memory[PC + 1];
                     if (offset > 127)  // gross
