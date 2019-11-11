@@ -239,6 +239,11 @@ namespace EMU6502
                     DEY();
                     break;
 
+                // NOP
+                case 0xEA:
+                    NOP();
+                    break;
+
                 // ADC
                 case 0x69:
                     ADC(MemoryAddressingMode.Immediate);
@@ -691,6 +696,11 @@ namespace EMU6502
             {
                 cycleDelayCounter = 2;
             }
+        }
+
+        private void NOP()
+        {
+            PC += 1;  // no operation, just increment program counter
         }
 
         private void pushStack()
