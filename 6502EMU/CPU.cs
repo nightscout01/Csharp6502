@@ -22,6 +22,7 @@ namespace EMU6502
     }
     class CPU
     {
+        private bool initialized;   // a cheap hack, but I believe it's needed for sanity checking.
         private readonly byte[] memory;
         private ushort PC;  // program counter
         private byte status;  // status reg
@@ -41,7 +42,7 @@ namespace EMU6502
                                                              // define the opcode, and bbb defines the addressing mode.
 
         // THIS CPU IS NOT MULTITHREADED... duh
-        public CPU(byte[] b)
+        public CPU(byte[] b)  // probably shouldn't use this constructor, I'll most likely remove it.
         {
             memory = new byte[65536];  // allocate 64K of "RAM" for the CPU
             Array.Copy(b, 0, memory, 0, b.Length);  // copy the passed in program into RAM if applicable.
@@ -51,8 +52,38 @@ namespace EMU6502
             // there's actually some very specific stuff that goes down here. Apparently it looks for a memory address to jump to at a specific mem address, I should
             // probably implement that.
         }
+
+        public CPU(byte[] b, ushort startLocation)  // unlike CHIP-8, there's no defined program data start location
+        {
+            memory = new byte[65536];  // allocate 64K of "RAM" for the CPU
+            Array.Copy(b, 0, memory, startLocation, b.Length);  // copy the passed in program into RAM at the specified index.
+            PC = 0;  // set the program counter to 0
+            status = (byte)(status | 0x20);  
+            // 0010 0000  we set status bit 5 to 1, as it is not used and should always contain logical 1.
+            // on reset, the 6502 looks for the program address to jump to at addresses 0xFFFC and 0xFFFD (low byte and high byte respectively)
+            // we should store the start location in those addresses.
+            byte MSB = (byte)(startLocation >> 8);
+            byte LSB = (byte)(startLocation & 0x00FF);
+            memory[0xFFFC] = LSB;
+            memory[0xFFFD] = MSB;
+        }
+
+        public void InitializeCPU()  // essentially the same as a power on or reset (I should probably make the RESET interrupt just call this if I add it)
+        {
+            // we read the program start address from the memory addresses 0xFFFC and 0xFFFD
+            byte MSB = memory[0xFFFD];
+            byte LSB = memory[0xFFFC];  // we could not even use the temp variables, but I'm trying to emphasize readability (or something). 
+            PC = (ushort)((MSB << 8) | LSB);
+            initialized = true;  // set the init flag.
+        }
+
+
         public void EmulateCycle()
         {
+            if (!initialized)  // TODO: might slow stuff down a lil bit, I'll have to see if this is really needed later.
+            {
+                throw new InvalidOperationException("The CPU is not initialized");
+            }
             if (cycleDelayCounter > 0)  // perhaps we'll get this thing to be cycle accurate :D
             {
                 cycleDelayCounter--;
@@ -480,11 +511,12 @@ namespace EMU6502
             // TODO: this method needs to set V (overflow) flag when required, but ehh I'll get to that later
             ushort memLocation = GetMemoryAddress(addressingMode);
             A += GetCarryFlag();  // we add the carry flag to the accumulator in this operation.
-            if(A + memory[memLocation] > 255)
+            if (A + memory[memLocation] > 255)
             {
                 SetCarryFlag(true);
-                A = (byte) (A + memory[memLocation] - 255);
-            } else
+                A = (byte)(A + memory[memLocation] - 255);
+            }
+            else
             {
                 SetCarryFlag(false);
             }
@@ -623,8 +655,8 @@ namespace EMU6502
             if (GetZeroFlag() == 1)  // we need to branch
             {
                 GetMemoryAddress(MemoryAddressingMode.Relative);  // currently just using MemoryAddressingMode.Relative on GetMemoryAddress performs
-                    // a jump.
-            } 
+                                                                  // a jump.
+            }
         }
 
         private void pushStack()
@@ -787,7 +819,7 @@ namespace EMU6502
 
         private byte GetZeroFlag()  // should this one return a boolean though because it makes more sense???? 
         {
-            return (byte)((status >> 1)& 0x01);
+            return (byte)((status >> 1) & 0x01);
         }
 
         private void SetZeroFlag(bool b)  // this is set to 1 when any arithmetic or 
