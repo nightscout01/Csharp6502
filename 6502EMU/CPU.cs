@@ -1197,7 +1197,7 @@ namespace EMU6502
             }
         }
 
-        private void SetSoftWareInterruptFlag(bool b)  // set when a software interrupt is executed
+        private void SetSoftwareInterruptFlag(bool b)  // set when a software interrupt is executed
         {
             if (b)  // yeah I know I could use ternary operators or something but like ehhhh
             {
