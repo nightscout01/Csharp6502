@@ -23,6 +23,7 @@ namespace EMU6502
     class CPU
     {
         private bool initialized;   // a cheap hack, but I believe it's needed for sanity checking.
+        private const bool DEBUG = true;
         private readonly byte[] memory;
         private ushort PC;  // program counter
         private byte status;  // status reg
@@ -84,11 +85,11 @@ namespace EMU6502
             {
                 throw new InvalidOperationException("The CPU is not initialized");
             }
-            if (cycleDelayCounter > 0)  // perhaps we'll get this thing to be cycle accurate :D
-            {
-                cycleDelayCounter--;
-                return;
-            }
+            //if (cycleDelayCounter > 0)  // perhaps we'll get this thing to be cycle accurate :D
+            //{
+            //    cycleDelayCounter--;
+            //    return;
+            //}
             // opcodes are 1 byte, but the number of additional bytes is defined by the opcode itself, so we'll have to increment the program counter by a variable number
             byte opcode = memory[PC];  // get the opcode (opcodes are only a byte, how much data is actually used per instruction depends on the instruction)
             Console.WriteLine("{0:X}",opcode);  // FOR DEBUGGING
@@ -434,21 +435,22 @@ namespace EMU6502
         private void STX(MemoryAddressingMode addressingMode)  // Store index X in memory  -> Store value in register X into the given memory location 
         {
             ushort memLocation;
+            memLocation = GetMemoryAddress(addressingMode);//memory[PC + 1];  // let's hope this zero extends like we expect.
+            memory[memLocation] = X;  // we store X in that memory location.
+            if (DEBUG)
+            {
+                Console.WriteLine("STX {0:X}", memory[memLocation]);  // this isn't a dissasembler, as we don't know which memory accessing mode
+                    // was used, but it's better than nothing
+            }
             switch (addressingMode)
             {
                 case MemoryAddressingMode.Zero_Page:
-                    memLocation = GetMemoryAddress(addressingMode);//memory[PC + 1];  // let's hope this zero extends like we expect.
-                    memory[memLocation] = X;  // we store X in that memory location.
                     cycleDelayCounter = 3;  // takes 3 cycles
                     break;
                 case MemoryAddressingMode.Zero_Page_Indexed_Y:
-                    memLocation = GetMemoryAddress(addressingMode);//memory[PC + 1];  // let's hope this zero extends like we expect.
-                    memory[memLocation + Y] = X;  // we store X in that memory location + y.
                     cycleDelayCounter = 4;  // takes 4 cycles
                     break;
                 case MemoryAddressingMode.Absolute:
-                    memLocation = GetMemoryAddress(addressingMode);//(ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // get the 16 bit absolute mem address
-                    memory[memLocation] = X;  // we store X in that memory location + y.
                     cycleDelayCounter = 4;  // takes 4 cycles
                     break;
                 default:
@@ -459,21 +461,22 @@ namespace EMU6502
         private void STY(MemoryAddressingMode addressingMode)  // Store index Y in memory  -> Store value in register Y into the given memory location 
         {
             ushort memLocation;
+            memLocation = GetMemoryAddress(addressingMode);
+            memory[memLocation] = Y;  // we store X in that memory location.
+            if (DEBUG)
+            {
+                Console.WriteLine("STY {0:X}", memory[memLocation]);  // this isn't a dissasembler, as we don't know which memory accessing mode
+                    // was used, but it's better than nothing.
+            }
             switch (addressingMode)
             {
                 case MemoryAddressingMode.Zero_Page:
-                    memLocation = GetMemoryAddress(addressingMode);
-                    memory[memLocation] = Y;  // we store X in that memory location.
                     cycleDelayCounter = 3;  // takes 3 cycles
                     break;
                 case MemoryAddressingMode.Zero_Page_Indexed_X:
-                    memLocation = GetMemoryAddress(addressingMode); //memory[PC + 1];  // let's hope this zero extends like we expect.
-                    memory[memLocation + X] = Y;  // we store X in that memory location + y.
                     cycleDelayCounter = 4;  // takes 4 cycles
                     break;
                 case MemoryAddressingMode.Absolute:
-                    memLocation = GetMemoryAddress(addressingMode);//(ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // get the 16 bit absolute mem address
-                    memory[memLocation] = Y;  // we store X in that memory location + y.
                     cycleDelayCounter = 4;  // takes 4 cycles
                     break;
                 default:
@@ -486,6 +489,10 @@ namespace EMU6502
             ushort memLocation;
             memLocation = GetMemoryAddress(addressingMode);
             memory[memLocation] = A;
+            if (DEBUG)
+            {
+                Console.WriteLine("STA {0:X}",memory[memLocation]);
+            }
             switch (addressingMode)
             {
                 case MemoryAddressingMode.Zero_Page:
