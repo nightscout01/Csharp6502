@@ -91,7 +91,7 @@ namespace EMU6502
             }
             // opcodes are 1 byte, but the number of additional bytes is defined by the opcode itself, so we'll have to increment the program counter by a variable number
             byte opcode = memory[PC];  // get the opcode (opcodes are only a byte, how much data is actually used per instruction depends on the instruction)
-
+            Console.WriteLine("{0:X}",opcode);  // FOR DEBUGGING
             switch (opcode)  // there's got to be a better way to organize this. 
             {
                 // LDX
@@ -293,7 +293,9 @@ namespace EMU6502
 
 
 
-
+                default:
+                    Console.WriteLine("ERROR: unknown opcode found: {0:X}", opcode);
+                    break;
             }
         }
 
@@ -306,6 +308,7 @@ namespace EMU6502
                     // okay for this instruction we load the next byte into the X register
                     X = memory[PC + 1];  // load the next byte into the X register
                     cycleDelayCounter = 2;  // this command takes 2 cycles
+                    PC += 2;
                     break;
                 case MemoryAddressingMode.Zero_Page:
                     memLocation = GetMemoryAddress(addressingMode);//memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
@@ -657,6 +660,7 @@ namespace EMU6502
                 GetMemoryAddress(MemoryAddressingMode.Relative);  // currently just using MemoryAddressingMode.Relative on GetMemoryAddress performs
                                                                   // a jump.
             }
+            PC += 1;
         }
 
         private void pushStack()
