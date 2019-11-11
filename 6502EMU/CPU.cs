@@ -252,6 +252,16 @@ namespace EMU6502
                     TAY();
                     break;
 
+                // INX
+                case 0xE8:
+                    INX();
+                    break;
+
+                // INY
+                case 0xC8:
+                    INY();
+                    break;
+
                 // DEY
                 case 0x88:
                     DEY();
@@ -763,12 +773,37 @@ namespace EMU6502
             PC += 1;
         }
 
+        private void INX()  // increment X by 1
+        {
+            if (DEBUG)
+            {
+                Console.WriteLine("INX");
+            }
+            X++;
+            GeneralFlagHelper(X);  // apparently we should do this
+            cycleDelayCounter = 2;  // somehow this takes two cycles as well
+            PC += 1;
+        }
+
+        private void INY()  // increment Y by 1
+        {
+            if (DEBUG)
+            {
+                Console.WriteLine("INY");
+            }
+            Y++;
+            GeneralFlagHelper(Y);  // apparently we should do this
+            cycleDelayCounter = 2;  // somehow this takes two cycles as well
+            PC += 1;
+        }
+
         private void DEX()  // decrement X by 1
         {
             if (DEBUG)
             {
                 Console.WriteLine("DEX");
             }
+            X--;
             GeneralFlagHelper(X);  // apparently we should do this
             cycleDelayCounter = 2;  // somehow this takes two cycles as well
             PC += 1;
