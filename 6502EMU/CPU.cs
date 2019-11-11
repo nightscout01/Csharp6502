@@ -319,33 +319,24 @@ namespace EMU6502
                 Console.WriteLine("LDX");
             }
             ushort memLocation;
+            memLocation = GetMemoryAddress(addressingMode);//memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
+            X = memory[memLocation];  // load the data at that zero page memory location into X
             switch (addressingMode)
             {
                 case MemoryAddressingMode.Immediate:  // cool switching on enum
-                    // okay for this instruction we load the next byte into the X register
-                    X = memory[PC + 1];  // load the next byte into the X register
                     cycleDelayCounter = 2;  // this command takes 2 cycles
-                    PC += 2;
                     break;
                 case MemoryAddressingMode.Zero_Page:
-                    memLocation = GetMemoryAddress(addressingMode);//memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
-                    X = memory[memLocation];  // load the data at that zero page memory location into X
                     cycleDelayCounter = 3;  // this command takes 3 cycles
                     break;
                 case MemoryAddressingMode.Zero_Page_Indexed_Y:
                     // The value in Y is added to the specified zero page address for a sum address. The value at the sum address is used to perform the computation.
-                    memLocation = GetMemoryAddress(addressingMode);//memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
-                    X = memory[memLocation];
                     cycleDelayCounter = 4;
                     break;
                 case MemoryAddressingMode.Absolute:  // a full 16 bit address is specified
-                    memLocation = GetMemoryAddress(addressingMode);//(ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
-                    X = memory[memLocation];
                     cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.
                     break;
                 case MemoryAddressingMode.Absolute_Indexed_Y:
-                    memLocation = GetMemoryAddress(addressingMode);//(ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // C# casting weirdness, it seems to rear its head a lot when coding emulators.
-                    X = memory[memLocation];  // same as above but we add y to the memory address
                     cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.  (apparently its 5 if a page boundary is crossed but idk what that means so...)
                     break;
                 default:
