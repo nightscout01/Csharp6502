@@ -190,6 +190,32 @@ namespace EMU6502
                     TAY();
                     break;
 
+                // ADC
+                case 0x69:
+                    ADC(MemoryAddressingMode.Immediate);
+                    break;
+                case 0x65:
+                    ADC(MemoryAddressingMode.Zero_Page);
+                    break;
+                case 0x75:
+                    ADC(MemoryAddressingMode.Zero_Page_Indexed_X);
+                    break;
+                case 0x60:
+                    ADC(MemoryAddressingMode.Absolute);
+                    break;
+                case 0x70:
+                    ADC(MemoryAddressingMode.Absolute_Indexed_X);
+                    break;
+                case 0x79:
+                    ADC(MemoryAddressingMode.Absolute_Indexed_Y);
+                    break;
+                case 0x61:
+                    ADC(MemoryAddressingMode.Indexed_Indirect);
+                    break;
+                case 0x71:
+                    ADC(MemoryAddressingMode.Indirect_Indexed);
+                    break;
+
                 // SBC
                 case 0xE9:
                     SBC(MemoryAddressingMode.Immediate);
@@ -441,6 +467,51 @@ namespace EMU6502
             }
         }
 
+        private void ADC(MemoryAddressingMode addressingMode)
+        {
+            // TODO: this method needs to set V (overflow) flag when required, but ehh I'll get to that later
+            ushort memLocation = GetMemoryAddress(addressingMode);
+            A += GetCarryFlag();  // we add the carry flag to the accumulator in this operation.
+            if(A + memory[memLocation] > 255)
+            {
+                SetCarryFlag(true);
+                A = (byte) (A + memory[memLocation] - 255);
+            } else
+            {
+                SetCarryFlag(false);
+            }
+            switch (addressingMode)
+            {
+                case MemoryAddressingMode.Immediate:
+                    cycleDelayCounter = 2;
+                    break;
+                case MemoryAddressingMode.Zero_Page:
+                    cycleDelayCounter = 3;
+                    break;
+                case MemoryAddressingMode.Zero_Page_Indexed_X:
+                    cycleDelayCounter = 4;
+                    break;
+                case MemoryAddressingMode.Absolute:
+                    cycleDelayCounter = 4;
+                    break;
+                case MemoryAddressingMode.Absolute_Indexed_X:  // 5 if it crosses a page boundary but at the moment I don't know what that means
+                    cycleDelayCounter = 4;
+                    break;
+                case MemoryAddressingMode.Absolute_Indexed_Y:  // 5 if it crosses a page boundary but at the moment I don't know what that means
+                    cycleDelayCounter = 4;
+                    break;
+                case MemoryAddressingMode.Indexed_Indirect:
+                    cycleDelayCounter = 6;
+                    break;
+                case MemoryAddressingMode.Indirect_Indexed:  // 6 if it crosses a page boundary but at the moment I don't know what that means
+                    cycleDelayCounter = 5;
+                    break;
+                default:
+                    throw new ArgumentException("Invalid Addressing Mode passed to ADC instruction: " + addressingMode);
+            }
+            GeneralFlagHelper(A);
+        }
+
         private void SBC(MemoryAddressingMode addressingMode)  // subtract with carry (we subtract the number from this instruction from the value in A)
         {
             ushort memLocation;
@@ -531,6 +602,11 @@ namespace EMU6502
         }
 
         private void pushStack()
+        {
+
+        }
+
+        private void ADCFlagHelper(byte val)
         {
 
         }
@@ -675,6 +751,12 @@ namespace EMU6502
             {
                 status = (byte)(status & 0xFE);  // 1111 1110  we set the carry bit to false
             }
+        }
+
+
+        private byte GetCarryFlag()
+        {
+            return (byte)(status & 0x01);
         }
 
         private void SetZeroFlag(bool b)  // this is set to 1 when any arithmetic or 
