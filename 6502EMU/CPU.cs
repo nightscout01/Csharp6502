@@ -247,7 +247,7 @@ namespace EMU6502
                     SBC(MemoryAddressingMode.Indirect_Indexed);
                     break;
 
-                // BNE   (maybe all the conditional branches)
+                // BNE   (maybe all the conditional branches should go here)
                 case 0xD0:
                     BNE();
                     break;
