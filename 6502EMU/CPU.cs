@@ -92,7 +92,14 @@ namespace EMU6502
             //}
             // opcodes are 1 byte, but the number of additional bytes is defined by the opcode itself, so we'll have to increment the program counter by a variable number
             byte opcode = memory[PC];  // get the opcode (opcodes are only a byte, how much data is actually used per instruction depends on the instruction)
-            Console.WriteLine("{0:X}",opcode);  // FOR DEBUGGING
+            if (DEBUG)
+            {
+                Console.WriteLine("Current Opcode: {0:X}", opcode);  // FOR DEBUGGING
+                Console.WriteLine("A: 0x{0:X}", A);
+                Console.WriteLine("X: 0x{0:X}", X);
+                Console.WriteLine("Y: 0x{0:X}", Y);
+                Console.WriteLine("PC: 0x{0:X}", PC);
+            }
             switch (opcode)  // there's got to be a better way to organize this. 
             {
                 // BRK
@@ -307,6 +314,10 @@ namespace EMU6502
 
         private void LDX(MemoryAddressingMode addressingMode)
         {
+            if (DEBUG)
+            {
+                Console.WriteLine("LDX");
+            }
             ushort memLocation;
             switch (addressingMode)
             {
@@ -345,6 +356,10 @@ namespace EMU6502
 
         private void LDY(MemoryAddressingMode addressingMode)
         {
+            if (DEBUG)
+            {
+                Console.WriteLine("LDY");
+            }
             ushort memLocation;
             memLocation = GetMemoryAddress(addressingMode);//memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
             Y = memory[memLocation];  // load the data at that zero page memory location into X
@@ -373,6 +388,10 @@ namespace EMU6502
 
         private void LDA(MemoryAddressingMode addressingMode)  // I can definitely shrink this guy down too, there's a lot of repeated code. 
         {
+            if (DEBUG)
+            {
+                Console.WriteLine("LDA");
+            }
             ushort memLocation;
             memLocation = GetMemoryAddress(addressingMode);
             A = memory[memLocation];  // load the data at that memory location into A
@@ -499,18 +518,23 @@ namespace EMU6502
 
         private void ADC(MemoryAddressingMode addressingMode)
         {
+            if (DEBUG)
+            {
+                Console.WriteLine("ADC");
+            }
             // TODO: this method needs to set V (overflow) flag when required, but ehh I'll get to that later
             ushort memLocation = GetMemoryAddress(addressingMode);
-            A += GetCarryFlag();  // we add the carry flag to the accumulator in this operation.
-            if (A + memory[memLocation] > 255)
+            // A += GetCarryFlag();  // we add the carry flag to the accumulator in this operation.
+            int val = memory[memLocation] + A + GetCarryFlag();
+            if(val > 255)
             {
                 SetCarryFlag(true);
-                A = (byte)(A + memory[memLocation] - 255);
-            }
-            else
+                val -= 256;
+            } else
             {
                 SetCarryFlag(false);
             }
+            A = (byte)val;
             switch (addressingMode)
             {
                 case MemoryAddressingMode.Immediate:
@@ -545,6 +569,10 @@ namespace EMU6502
 
         private void SBC(MemoryAddressingMode addressingMode)  // subtract with carry (we subtract the number from this instruction from the value in A)
         {
+            if (DEBUG)
+            {
+                Console.WriteLine("SBC");
+            }
             ushort memLocation;
             switch (addressingMode)  // I'm noticing that I can shrink this down. I think I'll shrink the instructions down after I know they work.
             {
@@ -604,6 +632,10 @@ namespace EMU6502
 
         private void SEC()  // set carry flag to 1.
         {
+            if (DEBUG)
+            {
+                Console.WriteLine("SEC");
+            }
             SetCarryFlag(true);
             cycleDelayCounter = 2;  // somehow this takes two cycles
             PC += 1;
@@ -611,6 +643,10 @@ namespace EMU6502
 
         private void CLC()  // set carry flag to 0
         {
+            if (DEBUG)
+            {
+                Console.WriteLine("CLC");
+            }
             SetCarryFlag(false);
             cycleDelayCounter = 2;
             PC += 1;
@@ -618,6 +654,10 @@ namespace EMU6502
 
         private void TYA()  // transfer Y to accumulator
         {
+            if (DEBUG)
+            {
+                Console.WriteLine("TYA");
+            }
             A = Y;
             GeneralFlagHelper(A);  // apparently we should do this
             cycleDelayCounter = 2;  // somehow this takes two cycles as well
@@ -626,6 +666,10 @@ namespace EMU6502
 
         private void TAY()  // transfer accumulator to Y
         {
+            if (DEBUG)
+            {
+                Console.WriteLine("TAY");
+            }
             Y = A;
             GeneralFlagHelper(Y);  // apparently we should do this
             cycleDelayCounter = 2;  // somehow this takes two cycles as well
@@ -634,6 +678,10 @@ namespace EMU6502
 
         private void DEY()  // decrement Y by 1
         {
+            if (DEBUG)
+            {
+                Console.WriteLine("DEY");
+            }
             Y--;
             GeneralFlagHelper(Y);  // apparently we should do this
             cycleDelayCounter = 2;  // somehow this takes two cycles as well
@@ -642,6 +690,10 @@ namespace EMU6502
 
         private void BRK()  // generates a non-maskable interrupt
         {
+            if (DEBUG)
+            {
+                Console.WriteLine("BRK");
+            }
             PC += 1;
             Console.WriteLine(A);  // for DEBUG
             // GENERATE NON MASKABLE INTERRUPT OR SOMETHING 
@@ -649,29 +701,26 @@ namespace EMU6502
 
         private void BNE()  // branch on result not 0  (equivelent to jnz in x86-64 I think... 351 gang rise up)
         {
+            PC += 2;
             //Console.WriteLine(GetZeroFlag());
             cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
             if (GetZeroFlag() == 0)  // we need to branch if the zero flag is not set (i.e. the result is not 0)
             {
-                byte offset = memory[PC + 1];  // get the offset
-                PC += 2;  // apparently the program counter is actually incremented during the instruction.
-                Console.WriteLine("offset is {0:X}", offset);
-                if (offset > 0x7f)
-                {
-                    int jumpAmount = -1 * (offset - 255);
-                    PC -= (ushort)jumpAmount;
-                   
+                PC--;
+                if (memory[PC] > 0x7f) {
+                    PC -= (ushort)(~memory[PC] & 0x00ff);
                 } else
                 {
-                    // else we just add the offset to the program counter
-                    PC += offset;
+                    PC += (ushort)(memory[PC] & 0x00ff);
                 }
-                
-                
+                cycleDelayCounter = 3;  // it's 3 cycles if there is a jump
+                Console.WriteLine("current PC is: {0:X}",PC);
                 //GetMemoryAddress(MemoryAddressingMode.Relative);  // currently just using MemoryAddressingMode.Relative on GetMemoryAddress performs
-                                                                  // a jump.
+                // a jump.
+            } else
+            {
+                cycleDelayCounter = 2;
             }
-            PC += 1;
         }
 
         private void pushStack()
