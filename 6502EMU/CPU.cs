@@ -10,8 +10,8 @@ namespace EMU6502
 
     enum MemoryAddressingMode  // this is just the worst (at least most instructions don't have all of them)
     {
-        Accumulator = 0,
-        Immediate = 1,
+        Accumulator = 0,  // this will (likely) always need to be a special case because commands with this addressing mode work on the A register
+        Immediate = 1,  // instead of a value in memory.
         Implied = 2,
         Relative = 3,
         Absolute = 4,
@@ -333,6 +333,7 @@ namespace EMU6502
                     SBC(MemoryAddressingMode.Indirect_Indexed);
                     break;
 
+                // AND 
                 case 0x29:
                     AND(MemoryAddressingMode.Immediate);
                     break;
@@ -357,6 +358,24 @@ namespace EMU6502
                 case 0x31:
                     AND(MemoryAddressingMode.Indirect_Indexed);
                     break;
+
+                // ASL
+                case 0x0A:
+                    ASL(MemoryAddressingMode.Accumulator);
+                    break;
+                case 0x06:
+                    ASL(MemoryAddressingMode.Zero_Page);
+                    break;
+                case 0x16:
+                    ASL(MemoryAddressingMode.Zero_Page_Indexed_X);
+                    break;
+                case 0x0E:
+                    ASL(MemoryAddressingMode.Absolute);
+                    break;
+                case 0x1E:
+                    ASL(MemoryAddressingMode.Absolute_Indexed_X);
+                    break;
+
 
                 // Conditional Branches
                 case 0xD0:
@@ -687,6 +706,44 @@ namespace EMU6502
                     throw new ArgumentException("Invalid Addressing Mode passed to STY instruction: " + addressingMode);
             }
             GeneralFlagHelper(A);
+        }
+
+        private void ASL(MemoryAddressingMode addressingMode)  // shift left 1 bit
+        {
+            if (DEBUG)
+            {
+                Console.WriteLine("ASL");
+            }
+            ushort memLocation;
+            if(addressingMode == MemoryAddressingMode.Accumulator)  // special case
+            {
+                SetCarryFlag((byte)(A >> 7));  // using new overloaded SetCarryFlag. I'll have to look into how I actually want the flags to be 
+                    // set and retrieved and choose 1 good option.
+                A = (byte)(A << 1);  // shift A by 1
+                PC += 1;
+                cycleDelayCounter = 2;  // this takes two cycles.
+            } else
+            {
+                memLocation = GetMemoryAddress(addressingMode);
+                SetCarryFlag((byte)(memory[memLocation] >> 7));  // set the carry flag to the MSB of whatever byte is in memory.
+                switch (addressingMode)
+                {
+                    case MemoryAddressingMode.Zero_Page:
+                        cycleDelayCounter = 5;
+                        break;
+                    case MemoryAddressingMode.Zero_Page_Indexed_X:
+                        cycleDelayCounter = 6;
+                        break;
+                    case MemoryAddressingMode.Absolute:
+                        cycleDelayCounter = 6;
+                        break;
+                    case MemoryAddressingMode.Absolute_Indexed_X:
+                        cycleDelayCounter = 7;
+                        break;
+                    default:
+                        throw new ArgumentException("Invalid Addressing Mode passed to ASL instruction: " + addressingMode);
+                }
+            }
         }
 
         private void SBC(MemoryAddressingMode addressingMode)  // subtract with carry (we subtract the number from this instruction from the value in A)
@@ -1128,8 +1185,19 @@ namespace EMU6502
 
         // HELPER METHODS FOR SETTING THE VARIOUS PROCESSOR FLAGS
 
+
+        // overload of SetCarryFlag where the method takes a byte (0 or 1) instead of a boolean. In C#, booleans are not usable in mathematics.
+        private void SetCarryFlag(byte b)
+        {
+            if(b > 1)
+            {
+                throw new ArgumentOutOfRangeException("Carry flag can only be set to 0 or 1");
+            }
+            status = (byte)(status & (0xFE+b));  // I think this will work.
+        }
+
         private void SetCarryFlag(bool b)
-        // his holds the carry out of the most significant bit in any arithmetic operation. 
+        // this holds the carry out of the most significant bit in any arithmetic operation. 
         // In subtraction operations however, this flag is cleared - set to 0 - if a borrow is required, set to 1 - if no borrow is required. 
         // The carry flag is also used in shift and rotate logical operations.
         {
