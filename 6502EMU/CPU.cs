@@ -274,6 +274,16 @@ namespace EMU6502
                     CLV();
                     break;
 
+                // TXA
+                case 0x8A:
+                    TXA();
+                    break;
+
+                // TAX
+                case 0xAA:
+                    TAX();
+                    break;
+
                 // TYA
                 case 0x98:
                     TYA();
@@ -282,6 +292,11 @@ namespace EMU6502
                 // TAY
                 case 0xA8:
                     TAY();
+                    break;
+
+                // TSX
+                case 0xBA:
+                    TSX();
                     break;
 
                 // TXS
@@ -1081,6 +1096,30 @@ namespace EMU6502
             PC += 1;
         }
 
+        private void TXA()  // transfer X to accumulator
+        {
+            if (DEBUG)
+            {
+                Console.WriteLine("TXA");
+            }
+            A = X;
+            GeneralFlagHelper(A);
+            cycleDelayCounter = 2;
+            PC += 1;
+        }
+
+        private void TAX()  // transfer accumulator to X
+        {
+            if (DEBUG)
+            {
+                Console.WriteLine("TAX");
+            }
+            X = A;
+            GeneralFlagHelper(X);
+            cycleDelayCounter = 2;
+            PC += 1;
+        }
+
         private void TYA()  // transfer Y to accumulator
         {
             if (DEBUG)
@@ -1102,6 +1141,18 @@ namespace EMU6502
             Y = A;
             GeneralFlagHelper(Y);  // apparently we should do this
             cycleDelayCounter = 2;  // somehow this takes two cycles as well
+            PC += 1;
+        }
+
+        private void TSX()  // transfer stack pointer to X
+        {
+            if (DEBUG)
+            {
+                Console.WriteLine("TSX");
+            }
+            X = S;
+            GeneralFlagHelper(X);
+            cycleDelayCounter = 2;
             PC += 1;
         }
 
