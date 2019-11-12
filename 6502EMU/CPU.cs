@@ -259,6 +259,16 @@ namespace EMU6502
                     CLD();
                     break;
 
+                // CLI
+                case 0x58:
+                    CLI();
+                    break;
+
+                // CLV
+                case 0xB8:
+                    CLV();
+                    break;
+
                 // TYA
                 case 0x98:
                     TYA();
@@ -832,6 +842,30 @@ namespace EMU6502
                 Console.WriteLine("CLD");
             }
             SetBCDFlag(false);
+            cycleDelayCounter = 2;
+            PC += 1;
+        }
+
+        private void CLI()  // set interrupt disable flag to 0 (clear interrupt flag)
+        {
+
+            if (DEBUG)
+            {
+                Console.WriteLine("CLI");
+            }
+            SetInterruptFlag(false);
+            cycleDelayCounter = 2;
+            PC += 1;
+        }
+
+        private void CLV()  // set overflow flag to 0 (clear overflow flag)
+        {
+
+            if (DEBUG)
+            {
+                Console.WriteLine("CLV");
+            }
+            SetOverflowFlag(false);
             cycleDelayCounter = 2;
             PC += 1;
         }
