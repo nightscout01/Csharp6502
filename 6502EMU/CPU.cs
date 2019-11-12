@@ -1445,7 +1445,10 @@ namespace EMU6502
 
         private void PHA()  // push accumulator (A) on stack
         {
-
+            if (DEBUG)
+            {
+                Console.WriteLine("PHA");
+            }
             PushToStack(A);  // push our accumulator on the stack
             cycleDelayCounter = 3;  // this operation takes 3 cycles
             PC += 1;  // increment the program counter by 1.
@@ -1453,6 +1456,10 @@ namespace EMU6502
 
         private void PHP()  // push status register on stack
         {
+            if (DEBUG)
+            {
+                Console.WriteLine("PHP");
+            }
             PushToStack(status);
             cycleDelayCounter = 3;
             PC += 1; 
@@ -1460,6 +1467,10 @@ namespace EMU6502
 
         private void PLA()  // pull accumulator from stack  (pull byte at S [topmost byte] into accumulator register A)
         {
+            if (DEBUG)
+            {
+                Console.WriteLine("PLA");
+            }
             A = PullFromStack();
             cycleDelayCounter = 4;  // this operation takes 4 cycles
             PC += 1;
@@ -1467,6 +1478,10 @@ namespace EMU6502
 
         private void PLP()  // pull processor status from stack (pull byte at S [topmost byte] into status register)
         {
+            if (DEBUG)
+            {
+                Console.WriteLine("PLP");
+            }
             status = PullFromStack();  // set the status register to the byte we just pulled off of the stack.
             cycleDelayCounter = 4;  // this operation takes 4 cycles
             PC += 1;
