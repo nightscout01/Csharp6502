@@ -746,11 +746,13 @@ namespace EMU6502
                 A = (byte)(A << 1);  // shift A by 1
                 PC += 1;
                 cycleDelayCounter = 2;  // this takes two cycles.
+                GeneralFlagHelper(A);
             }
             else
             {
                 memLocation = GetMemoryAddress(addressingMode);
                 SetCarryFlag((byte)(memory[memLocation] >> 7));  // set the carry flag to the MSB of whatever byte is in memory.
+                memory[memLocation] = (byte)(memory[memLocation] << 1);  // actually perform the left shift
                 switch (addressingMode)
                 {
                     case MemoryAddressingMode.Zero_Page:
@@ -768,6 +770,7 @@ namespace EMU6502
                     default:
                         throw new ArgumentException("Invalid Addressing Mode passed to ASL instruction: " + addressingMode);
                 }
+                GeneralFlagHelper(memory[memLocation]);
             }
         }
 
