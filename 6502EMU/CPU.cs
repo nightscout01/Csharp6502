@@ -54,13 +54,12 @@ namespace EMU6502
          *  Bit No. 7   6   5   4   3   2   1   0
                     S   V       B   D   I   Z   C
          */
-        private byte SP;  // stack pointer?
+        private byte S;  // stack pointer.  The 6502 stack pointer holds the last byte of the memory address 0x01XX. 
+            // The 6502 stack grows down from 0x01FF to 0x0100. 
         private byte X;  // register X
         private byte Y;  // register Y
         private byte A;  // accumulator register
         private int cycleDelayCounter;
-        readonly Stack<ushort> stack = new Stack<ushort>();  // we'll just use a stack for our stack why not?
-                                                             // On the 6502, the stack starts at 0x1FF and grows towards 0x100.
                                                              // 6502 instruction operation codes (opcodes) 
                                                              // are eight-bits long and have the general form aaabbbcc, where aaa and cc 
                                                              // define the opcode, and bbb defines the addressing mode.
@@ -73,6 +72,9 @@ namespace EMU6502
             PC = 0;  // set the program counter to 0
             status = (byte)(status | 0x20);  // 0010 0000  we set status bit 5 to 1, as it is not used and should always contain logical 1.
 
+            S = 0;  // apparently on the 6502 the stack pointer is NOT self initializing, most ROMS contain code to set it to the proper value,
+                // 0xFF, on startup
+            
             // there's actually some very specific stuff that goes down here. Apparently it looks for a memory address to jump to at a specific mem address, I should
             // probably implement that.
         }
@@ -82,6 +84,8 @@ namespace EMU6502
             memory = new byte[65536];  // allocate 64K of "RAM" for the CPU
             Array.Copy(b, 0, memory, startLocation, b.Length);  // copy the passed in program into RAM at the specified index.
             PC = 0;  // set the program counter to 0
+            S = 0; // apparently on the 6502 the stack pointer is NOT self initializing, most ROMS contain code to set it to the proper value,
+                   // 0xFF, on startup
             status = (byte)(status | 0x20);
             // 0010 0000  we set status bit 5 to 1, as it is not used and should always contain logical 1.
             // on reset, the 6502 looks for the program address to jump to at addresses 0xFFFC and 0xFFFD (low byte and high byte respectively)
@@ -113,8 +117,10 @@ namespace EMU6502
             //    cycleDelayCounter--;
             //    return;
             //}
-            // opcodes are 1 byte, but the number of additional bytes is defined by the opcode itself, so we'll have to increment the program counter by a variable number
-            byte opcode = memory[PC];  // get the opcode (opcodes are only a byte, how much data is actually used per instruction depends on the instruction)
+            // opcodes are 1 byte, but the number of additional bytes is defined by the opcode itself, 
+            // so we'll have to increment the program counter by a variable number
+            byte opcode = memory[PC];  // get the opcode (opcodes are only a byte, how much data is actually used per 
+            // instruction depends on the instruction)
             if (DEBUG)
             {
                 Console.WriteLine("Current Opcode: {0:X}", opcode);  // FOR DEBUGGING
@@ -532,14 +538,16 @@ namespace EMU6502
                     cycleDelayCounter = 3;  // this command takes 3 cycles
                     break;
                 case MemoryAddressingMode.Zero_Page_Indexed_Y:
-                    // The value in Y is added to the specified zero page address for a sum address. The value at the sum address is used to perform the computation.
+                    // The value in Y is added to the specified zero page address for a sum address. The value at 
+                    // the sum address is used to perform the computation.
                     cycleDelayCounter = 4;
                     break;
                 case MemoryAddressingMode.Absolute:  // a full 16 bit address is specified
                     cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.
                     break;
                 case MemoryAddressingMode.Absolute_Indexed_Y:
-                    cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.  (apparently its 5 if a page boundary is crossed but idk what that means so...)
+                    cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.  
+                    // (apparently its 5 if a page boundary is crossed but idk what that means so...)
                     break;
                 default:
                     throw new ArgumentException("Invalid Addressing Mode passed to LDX instruction.");
@@ -571,7 +579,8 @@ namespace EMU6502
                     cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.
                     break;
                 case MemoryAddressingMode.Absolute_Indexed_Y:
-                    cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.  (apparently its 5 if a page boundary is crossed but idk what that means so...)
+                    cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.  (apparently its 5 if a page boundary 
+                    // is crossed but idk what that means so...)
                     break;
                 default:
                     throw new ArgumentException("Invalid Addressing Mode passed to LDY instruction.");
@@ -603,10 +612,12 @@ namespace EMU6502
                     cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.
                     break;
                 case MemoryAddressingMode.Absolute_Indexed_X:  // add 1 if page boundary crossed (eeeee)
-                    cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.  (apparently its 5 if a page boundary is crossed but idk what that means so...)
+                    cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.  (apparently its 5 if a page boundary 
+                    // is crossed but idk what that means so...)
                     break;
                 case MemoryAddressingMode.Absolute_Indexed_Y:
-                    cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.  (apparently its 5 if a page boundary is crossed but idk what that means so...)
+                    cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.  (apparently its 5 if a page boundary 
+                    // is crossed but idk what that means so...)
                     break;
                 case MemoryAddressingMode.Indexed_Indirect:
                     cycleDelayCounter = 6;
@@ -1428,8 +1439,8 @@ namespace EMU6502
                     PC += 2;
                     // hope that works
                     break;
-                case MemoryAddressingMode.Indirect:  // the instruction contains a 16 bit address which identifies the location of the LSB of another 16 bit 
-                                                     // address which is the real target of the instruction (why is this even a thing?)
+                case MemoryAddressingMode.Indirect:  // the instruction contains a 16 bit address which identifies the location of the 
+                    // LSB of another 16 bit address which is the real target of the instruction (why is this even a thing?)
                     memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // get the 16 bit absolute mem address
                     LSB = memory[memLocation];
                     MSB = memory[memLocation + 1];
