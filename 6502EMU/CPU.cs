@@ -757,13 +757,13 @@ namespace EMU6502
                 case MemoryAddressingMode.Immediate:
                     cycleDelayCounter = 2;
                     break;
-                case MemoryAddressingMode.Absolute:
-                    cycleDelayCounter = 4;
-                    break;
                 case MemoryAddressingMode.Zero_Page:
                     cycleDelayCounter = 3;
                     break;
                 case MemoryAddressingMode.Zero_Page_Indexed_X:
+                    cycleDelayCounter = 4;
+                    break;
+                case MemoryAddressingMode.Absolute:
                     cycleDelayCounter = 4;
                     break;
                 case MemoryAddressingMode.Absolute_Indexed_X:
@@ -798,13 +798,13 @@ namespace EMU6502
                 case MemoryAddressingMode.Immediate:
                     cycleDelayCounter = 2;
                     break;
-                case MemoryAddressingMode.Absolute:
-                    cycleDelayCounter = 4;
-                    break;
                 case MemoryAddressingMode.Zero_Page:
                     cycleDelayCounter = 3;
                     break;
                 case MemoryAddressingMode.Zero_Page_Indexed_X:
+                    cycleDelayCounter = 4;
+                    break;
+                case MemoryAddressingMode.Absolute:
                     cycleDelayCounter = 4;
                     break;
                 case MemoryAddressingMode.Absolute_Indexed_X:
@@ -838,13 +838,13 @@ namespace EMU6502
                 case MemoryAddressingMode.Immediate:
                     cycleDelayCounter = 2;
                     break;
-                case MemoryAddressingMode.Absolute:
-                    cycleDelayCounter = 4;
-                    break;
                 case MemoryAddressingMode.Zero_Page:
                     cycleDelayCounter = 3;
                     break;
                 case MemoryAddressingMode.Zero_Page_Indexed_X:
+                    cycleDelayCounter = 4;
+                    break;
+                case MemoryAddressingMode.Absolute:
                     cycleDelayCounter = 4;
                     break;
                 case MemoryAddressingMode.Absolute_Indexed_X:
