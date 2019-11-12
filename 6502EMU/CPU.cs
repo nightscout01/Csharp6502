@@ -382,6 +382,32 @@ namespace EMU6502
                     AND(MemoryAddressingMode.Indirect_Indexed);
                     break;
 
+                // ORA
+                case 0x09:
+                    ORA(MemoryAddressingMode.Immediate);
+                    break;
+                case 0x05:
+                    ORA(MemoryAddressingMode.Zero_Page);
+                    break;
+                case 0x15:
+                    ORA(MemoryAddressingMode.Zero_Page_Indexed_X);
+                    break;
+                case 0x0D:
+                    ORA(MemoryAddressingMode.Absolute);
+                    break;
+                case 0x1D:
+                    ORA(MemoryAddressingMode.Absolute_Indexed_X);
+                    break;
+                case 0x19:
+                    ORA(MemoryAddressingMode.Absolute_Indexed_Y);
+                    break;
+                case 0x01:
+                    ORA(MemoryAddressingMode.Indexed_Indirect);
+                    break;
+                case 0x11:
+                    ORA(MemoryAddressingMode.Indirect_Indexed);
+                    break;
+
                 // ASL
                 case 0x0A:
                     ASL(MemoryAddressingMode.Accumulator);
@@ -636,7 +662,7 @@ namespace EMU6502
                     cycleDelayCounter = 6;
                     break;
                 default:
-                    throw new ArgumentException("Invalid Addressing Mode passed to STY instruction: " + addressingMode);
+                    throw new ArgumentException("Invalid Addressing Mode passed to STA instruction: " + addressingMode);
             }
         }
 
@@ -727,7 +753,48 @@ namespace EMU6502
                     cycleDelayCounter = 5;
                     break;
                 default:
-                    throw new ArgumentException("Invalid Addressing Mode passed to STY instruction: " + addressingMode);
+                    throw new ArgumentException("Invalid Addressing Mode passed to AND instruction: " + addressingMode);
+            }
+            GeneralFlagHelper(A);
+        }
+
+
+        private void ORA(MemoryAddressingMode addressingMode)  // OR memory with accumulator
+        {
+            if (DEBUG)
+            {
+                Console.WriteLine("ORA");
+            }
+            ushort memLocation = GetMemoryAddress(addressingMode);
+            A = (byte)(memory[memLocation] | A);
+            switch (addressingMode)
+            {
+                case MemoryAddressingMode.Immediate:
+                    cycleDelayCounter = 2;
+                    break;
+                case MemoryAddressingMode.Absolute:
+                    cycleDelayCounter = 4;
+                    break;
+                case MemoryAddressingMode.Zero_Page:
+                    cycleDelayCounter = 3;
+                    break;
+                case MemoryAddressingMode.Zero_Page_Indexed_X:
+                    cycleDelayCounter = 4;
+                    break;
+                case MemoryAddressingMode.Absolute_Indexed_X:
+                    cycleDelayCounter = 4;   // 5 when going over a page break
+                    break;
+                case MemoryAddressingMode.Absolute_Indexed_Y:
+                    cycleDelayCounter = 4;   // 5 when going over a page break
+                    break;
+                case MemoryAddressingMode.Indexed_Indirect:
+                    cycleDelayCounter = 6;
+                    break;
+                case MemoryAddressingMode.Indirect_Indexed:
+                    cycleDelayCounter = 5;
+                    break;
+                default:
+                    throw new ArgumentException("Invalid Addressing Mode passed to ORA instruction: " + addressingMode);
             }
             GeneralFlagHelper(A);
         }
