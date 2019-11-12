@@ -451,6 +451,23 @@ namespace EMU6502
                     ASL(MemoryAddressingMode.Absolute_Indexed_X);
                     break;
 
+                // LSR
+                case 0x4A:
+                    LSR(MemoryAddressingMode.Accumulator);
+                    break;
+                case 0x46:
+                    LSR(MemoryAddressingMode.Zero_Page);
+                    break;
+                case 0x56:
+                    LSR(MemoryAddressingMode.Zero_Page_Indexed_X);
+                    break;
+                case 0x4E:
+                    LSR(MemoryAddressingMode.Absolute);
+                    break;
+                case 0x5E:
+                    LSR(MemoryAddressingMode.Absolute_Indexed_X);
+                    break;
+
 
                 // Conditional Branches
                 case 0xD0:
@@ -871,19 +888,18 @@ namespace EMU6502
             {
                 Console.WriteLine("ASL");
             }
-            ushort memLocation;
             if (addressingMode == MemoryAddressingMode.Accumulator)  // special case
             {
                 SetCarryFlag((byte)(A >> 7));  // using new overloaded SetCarryFlag. I'll have to look into how I actually want the flags to be 
                                                // set and retrieved and choose 1 good option.
-                A = (byte)(A << 1);  // shift A by 1
+                A = (byte)(A << 1);  // shift A by 1 to the left
                 PC += 1;
                 cycleDelayCounter = 2;  // this takes two cycles.
                 GeneralFlagHelper(A);
             }
             else
             {
-                memLocation = GetMemoryAddress(addressingMode);
+                ushort memLocation = GetMemoryAddress(addressingMode);
                 SetCarryFlag((byte)(memory[memLocation] >> 7));  // set the carry flag to the MSB of whatever byte is in memory.
                 memory[memLocation] = (byte)(memory[memLocation] << 1);  // actually perform the left shift
                 switch (addressingMode)
@@ -904,6 +920,50 @@ namespace EMU6502
                         throw new ArgumentException("Invalid Addressing Mode passed to ASL instruction: " + addressingMode);
                 }
                 GeneralFlagHelper(memory[memLocation]);
+            }
+        }
+
+        private void LSR(MemoryAddressingMode addressingMode)  // logical right shift by 1 bit
+        {
+            if (DEBUG)
+            {
+                Console.WriteLine("LSR");
+            }
+            if (addressingMode == MemoryAddressingMode.Accumulator)  // special case
+            {
+                A = (byte)(A >> 1);  // shift A by 1 to the right  (since results are cast to an int afterwards, let's just mask off the most signifcant
+                                     // bit with a zero after we're done with the shifting.
+                A = (byte)(A & 0x7f);  // mask A with bitmask 0b 0111 1111
+                PC += 1;
+                cycleDelayCounter = 2;  // this takes two cycles.
+                SetSignFlag(false);  // sign flag is always false after this instruction executes
+                SetZeroFlag(A == 0);  // pros: only 1 line, very clean looking.  cons: pretty weird looking to anyone who doesn't realize you can do this.
+            }
+            else
+            {
+                ushort memLocation = GetMemoryAddress(addressingMode);
+                memory[memLocation] = (byte)(memory[memLocation] >> 1);  // actually perform the right shift
+                memory[memLocation] = (byte)(memory[memLocation] & 0x7f);  // mask A with bitmask 0b 0111 1111
+                // seems like a nice place to try to use ref byte or something. (TODO: look into that)
+                switch (addressingMode)
+                {
+                    case MemoryAddressingMode.Zero_Page:
+                        cycleDelayCounter = 5;
+                        break;
+                    case MemoryAddressingMode.Zero_Page_Indexed_X:
+                        cycleDelayCounter = 6;
+                        break;
+                    case MemoryAddressingMode.Absolute:
+                        cycleDelayCounter = 6;
+                        break;
+                    case MemoryAddressingMode.Absolute_Indexed_X:
+                        cycleDelayCounter = 7;
+                        break;
+                    default:
+                        throw new ArgumentException("Invalid Addressing Mode passed to LSR instruction: " + addressingMode);
+                }
+                SetSignFlag(false);  // set the sign/negative flag to false/0 (specified for this instruction)
+                SetZeroFlag(memory[memLocation] == 0);  // very short and snazzy, but perhaps not the most readable.
             }
         }
 
