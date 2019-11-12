@@ -1081,6 +1081,10 @@ namespace EMU6502
         private void CMP(MemoryAddressingMode addressingMode)  // compare memory and accumulator and set flags accordingly
             // kinda similar to x86-64's CMP
         {
+            if (DEBUG)
+            {
+                Console.WriteLine("CMP");
+            }
             ushort memLocation = GetMemoryAddress(addressingMode);  // get the em
             byte temp = (byte)(A - memory[memLocation]);
 
@@ -1117,6 +1121,8 @@ namespace EMU6502
                 case MemoryAddressingMode.Indirect_Indexed:
                     cycleDelayCounter = 5;  // 6 on page break
                     break;
+                default:
+                    throw new ArgumentException("Invalid Addressing Mode passed to CMP instruction: " + addressingMode);
             }
             GeneralFlagHelper(temp);  // set negative and zero flags
         }
