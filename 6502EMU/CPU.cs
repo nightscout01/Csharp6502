@@ -43,6 +43,7 @@ namespace EMU6502
         /* BIG TODOS:
          *  V/overflow flag is not set in the ADC instruction, and probably not set anywhere
          *  Not fully cycle accurate as when we go over a page boundary we're supposed to add an extra cycle, I haven't done that yet.
+         *  Find a consistent and good way to handle getting and setting flags. Having both byte (0 or 1) and boolean versions for set is odd.
          */
         private bool initialized;   // a cheap hack, but I believe it's needed for sanity checking.
         private const bool DEBUG = true;
@@ -81,7 +82,7 @@ namespace EMU6502
             memory = new byte[65536];  // allocate 64K of "RAM" for the CPU
             Array.Copy(b, 0, memory, startLocation, b.Length);  // copy the passed in program into RAM at the specified index.
             PC = 0;  // set the program counter to 0
-            status = (byte)(status | 0x20);  
+            status = (byte)(status | 0x20);
             // 0010 0000  we set status bit 5 to 1, as it is not used and should always contain logical 1.
             // on reset, the 6502 looks for the program address to jump to at addresses 0xFFFC and 0xFFFD (low byte and high byte respectively)
             // we should store the start location in those addresses.
@@ -235,6 +236,13 @@ namespace EMU6502
                     STA(MemoryAddressingMode.Indexed_Indirect);
                     break;
 
+                // BIT
+                case 0x24:
+                    BIT(MemoryAddressingMode.Zero_Page);
+                    break;
+                case 0x2C:
+                    BIT(MemoryAddressingMode.Absolute);
+                    break;
 
                 // SEC
                 case 0x38:
@@ -418,7 +426,7 @@ namespace EMU6502
 
                 default:
                     throw new ArgumentException("ERROR: unknown opcode found: " + opcode);  // it's not going to be hex formatted but it's better
-                        // than nothing
+                                                                                            // than nothing
             }
         }
 
@@ -536,7 +544,7 @@ namespace EMU6502
             if (DEBUG)
             {
                 Console.WriteLine("STX {0:X}", memory[memLocation]);  // this isn't a dissasembler, as we don't know which memory accessing mode
-                    // was used, but it's better than nothing
+                                                                      // was used, but it's better than nothing
             }
             switch (addressingMode)
             {
@@ -562,7 +570,7 @@ namespace EMU6502
             if (DEBUG)
             {
                 Console.WriteLine("STY {0:X}", memory[memLocation]);  // this isn't a dissasembler, as we don't know which memory accessing mode
-                    // was used, but it's better than nothing.
+                                                                      // was used, but it's better than nothing.
             }
             switch (addressingMode)
             {
@@ -587,7 +595,7 @@ namespace EMU6502
             memory[memLocation] = A;
             if (DEBUG)
             {
-                Console.WriteLine("STA {0:X}",memory[memLocation]);
+                Console.WriteLine("STA {0:X}", memory[memLocation]);
             }
             switch (addressingMode)
             {
@@ -627,11 +635,12 @@ namespace EMU6502
             ushort memLocation = GetMemoryAddress(addressingMode);
             // A += GetCarryFlag();  // we add the carry flag to the accumulator in this operation.
             int val = memory[memLocation] + A + GetCarryFlag();
-            if(val > 255)
+            if (val > 255)
             {
                 SetCarryFlag(true);
                 val -= 256;
-            } else
+            }
+            else
             {
                 SetCarryFlag(false);
             }
@@ -715,14 +724,15 @@ namespace EMU6502
                 Console.WriteLine("ASL");
             }
             ushort memLocation;
-            if(addressingMode == MemoryAddressingMode.Accumulator)  // special case
+            if (addressingMode == MemoryAddressingMode.Accumulator)  // special case
             {
                 SetCarryFlag((byte)(A >> 7));  // using new overloaded SetCarryFlag. I'll have to look into how I actually want the flags to be 
-                    // set and retrieved and choose 1 good option.
+                                               // set and retrieved and choose 1 good option.
                 A = (byte)(A << 1);  // shift A by 1
                 PC += 1;
                 cycleDelayCounter = 2;  // this takes two cycles.
-            } else
+            }
+            else
             {
                 memLocation = GetMemoryAddress(addressingMode);
                 SetCarryFlag((byte)(memory[memLocation] >> 7));  // set the carry flag to the MSB of whatever byte is in memory.
@@ -881,6 +891,40 @@ namespace EMU6502
             cycleDelayCounter = 2;  // somehow this takes two cycles as well
             PC += 1;
         }
+
+
+        /*
+         * N receives the initial, un-ANDed value of memory bit 7.
+         * V receives the initial, un-ANDed value of memory bit 6.
+         * Z is set if the result of the AND is zero, otherwise reset.
+         */
+        private void BIT(MemoryAddressingMode addressingMode)
+        {
+            ushort memLocation = GetMemoryAddress(addressingMode);
+            SetCarryFlag((byte)(memory[memLocation] >> 7));  // set the carry flag to the 7th memory bit.
+            SetOverflowFlag((byte)(memory[memLocation] >> 6));  // set the overflow flag to the 6th memory bit.
+            if((A & memory[memLocation]) == 0)
+            {
+                SetZeroFlag(true);  // for this one having the booleans is nice, but I suppose I could just make the byte one say anything non-zero is
+                    // true just like C... that would probably require an if statement though. 
+            } else
+            {
+                SetZeroFlag(false);
+            }
+            switch (addressingMode)
+            {
+                case MemoryAddressingMode.Zero_Page:
+                    cycleDelayCounter = 3;
+                    break;
+                case MemoryAddressingMode.Absolute:
+                    cycleDelayCounter = 4;
+                    break;
+                default:
+                    throw new ArgumentException("Invalid Addressing Mode passed to BIT instruction: " + addressingMode);
+            }
+
+        }
+
         private void BRK()  // generates a non-maskable interrupt
         {
             if (DEBUG)
@@ -905,7 +949,8 @@ namespace EMU6502
             if (GetZeroFlag() == 0)  // we need to branch if the zero flag is not set (i.e. the result is not 0)
             {
                 BranchHelper();  // perform the branch
-            } else
+            }
+            else
             {
                 cycleDelayCounter = 2;
             }
@@ -1189,11 +1234,11 @@ namespace EMU6502
         // overload of SetCarryFlag where the method takes a byte (0 or 1) instead of a boolean. In C#, booleans are not usable in mathematics.
         private void SetCarryFlag(byte b)
         {
-            if(b > 1)
+            if (b > 1)
             {
                 throw new ArgumentOutOfRangeException("Carry flag can only be set to 0 or 1");
             }
-            status = (byte)(status & (0xFE+b));  // I think this will work.
+            status = (byte)(status & (0xFE + b));  // I think this will work.
         }
 
         private void SetCarryFlag(bool b)
@@ -1229,7 +1274,26 @@ namespace EMU6502
 
         private byte GetOverflowFlag()
         {
-            return (byte)((status >> 6)& 0x01);
+            return (byte)((status >> 6) & 0x01);
+        }
+
+        private void SetZeroFlag(byte b)
+        {
+            if(b > 1)
+            {
+                throw new ArgumentOutOfRangeException("Zero flag can only be set to 0 or 1");
+            }
+            // TODO: FIGURE OUT THE BITSHIFTING VERSION OF THIS LATER
+            //status = (byte)(status & ((b << 1) + 1));  <-- currently not correct
+
+            if (b == 1)  // yeah yeah I know, it's not even a ternary operator version of this. I might come through and compress the if/else
+                // statements that I can into ternary statements, but that does affect readability so ehhh maybe not.
+            {
+                status = (byte)(status | 0x02);  // 0000 0010  we set the zero bit to true 
+            } else
+            {
+                status = (byte)(status & 0xFD);  // 1111 1101  we set the zero bit to false
+            }
         }
 
         private void SetZeroFlag(bool b)  // this is set to 1 when any arithmetic or 
@@ -1278,6 +1342,23 @@ namespace EMU6502
             else
             {
                 status = (byte)(status & 0xEF);  // 1110 1111  we set that bit to false
+            }
+        }
+
+        // overload that takes an actual byte value
+        private void SetOverflowFlag(byte b)
+        {
+            if (b > 1)
+            {
+                throw new ArgumentOutOfRangeException("Overflow flag can only be set to 0 or 1");
+            }
+
+            if (b == 1)  // TODO: figure out the pure bitwise version of this too instead of an if statement.
+            {
+                status = (byte)(status | 0x40);  // 0100 0000  we set the overflow (V) bit to true
+            } else
+            {
+                status = (byte)(status & 0xBF);  // 1011 1111  we set that bit to false
             }
         }
 
