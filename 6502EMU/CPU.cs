@@ -54,14 +54,14 @@ namespace EMU6502
                     S   V       B   D   I   Z   C
          */
         private byte S;  // stack pointer.  The 6502 stack pointer holds the last byte of the memory address 0x01XX. 
-            // The 6502 stack grows down from 0x01FF to 0x0100. 
+                         // The 6502 stack grows down from 0x01FF to 0x0100. 
         private byte X;  // register X
         private byte Y;  // register Y
         private byte A;  // accumulator register
         private int cycleDelayCounter;
-                                                             // 6502 instruction operation codes (opcodes) 
-                                                             // are eight-bits long and have the general form aaabbbcc, where aaa and cc 
-                                                             // define the opcode, and bbb defines the addressing mode.
+        // 6502 instruction operation codes (opcodes) 
+        // are eight-bits long and have the general form aaabbbcc, where aaa and cc 
+        // define the opcode, and bbb defines the addressing mode.
 
         // THIS CPU IS NOT MULTITHREADED... duh
         public CPU(byte[] b)  // probably shouldn't use this constructor, I'll most likely remove it.
@@ -72,8 +72,8 @@ namespace EMU6502
             status = (byte)(status | 0x20);  // 0010 0000  we set status bit 5 to 1, as it is not used and should always contain logical 1.
 
             S = 0;  // apparently on the 6502 the stack pointer is NOT self initializing, most ROMS contain code to set it to the proper value,
-                // 0xFF, on startup
-            
+                    // 0xFF, on startup
+
             // there's actually some very specific stuff that goes down here. Apparently it looks for a memory address to jump to at a specific mem address, I should
             // probably implement that.
         }
@@ -521,7 +521,20 @@ namespace EMU6502
                     break;
 
 
+                // Stack Instructions
 
+                case 0x48:
+                    PHA();
+                    break;
+                case 0x08:
+                    PHP();
+                    break;
+                case 0x68:
+                    PLA();
+                    break;
+                case 0x28:
+                    PLP();
+                    break;
 
 
 
@@ -1230,11 +1243,12 @@ namespace EMU6502
             ushort memLocation = GetMemoryAddress(addressingMode);
             SetCarryFlag((byte)(memory[memLocation] >> 7));  // set the carry flag to the 7th memory bit.
             SetOverflowFlag((byte)(memory[memLocation] >> 6));  // set the overflow flag to the 6th memory bit.
-            if((A & memory[memLocation]) == 0)
+            if ((A & memory[memLocation]) == 0)
             {
                 SetZeroFlag(true);  // for this one having the booleans is nice, but I suppose I could just make the byte one say anything non-zero is
-                    // true just like C... that would probably require an if statement though. 
-            } else
+                                    // true just like C... that would probably require an if statement though. 
+            }
+            else
             {
                 SetZeroFlag(false);
             }
@@ -1263,7 +1277,7 @@ namespace EMU6502
             // GENERATE NON MASKABLE INTERRUPT OR SOMETHING 
         }
 
-        // we can probably shrink the branch statements because there is a lot of repeated code, but I'll do that later.
+        // BRANCH INSTRUCTIONS
 
         private void BNE()  // branch on result not 0  (equivelent to jnz in x86-64 I think... 351 gang rise up)
         {
@@ -1424,6 +1438,54 @@ namespace EMU6502
             }
             cycleDelayCounter = 3;  // it's 3 cycles if there is a jump
             Console.WriteLine("current PC is: {0:X}", PC);
+        }
+
+
+        // STACK INSTRUCTIONS   (stack related instructions)
+
+        private void PHA()  // push accumulator (A) on stack
+        {
+
+            PushToStack(A);  // push our accumulator on the stack
+            cycleDelayCounter = 3;  // this operation takes 3 cycles
+            PC += 1;  // increment the program counter by 1.
+        }
+
+        private void PHP()  // push status register on stack
+        {
+            PushToStack(status);
+            cycleDelayCounter = 3;
+            PC += 1; 
+        }
+
+        private void PLA()  // pull accumulator from stack  (pull byte at S [topmost byte] into accumulator register A)
+        {
+            A = PullFromStack();
+            cycleDelayCounter = 4;  // this operation takes 4 cycles
+            PC += 1;
+        }
+
+        private void PLP()  // pull processor status from stack (pull byte at S [topmost byte] into status register)
+        {
+            status = PullFromStack();  // set the status register to the byte we just pulled off of the stack.
+            cycleDelayCounter = 4;  // this operation takes 4 cycles
+            PC += 1;
+        }
+
+
+        private void PushToStack(byte b)
+        {
+            ushort stackMem = (ushort)(0x0100 | S);  // generate our 16 bit actual memory address from our 8 bit stack pointer "address"
+            memory[stackMem] = b;  // set the data at this memory location to be the data we want to push to the stack
+            S -= 0x1;  // we only store 1 byte at a time on the stack, so after we're done storing our data we decrement the stack pointer by 1.
+        }
+
+        private byte PullFromStack()
+        {
+            ushort stackMem = (ushort)(0x0100 | S);  // generate our 16 bit actual memory address from our 8 bit stack pointer "address"
+            byte toReturn = memory[stackMem];  // get the data from that memory address and store it in a byte that we will return
+            S += 0x1;  // increment the stack pointer up by 1.
+            return toReturn;  // return the byte we retrieved.
         }
 
         private void NOP()
@@ -1606,7 +1668,7 @@ namespace EMU6502
 
         private void SetZeroFlag(byte b)
         {
-            if(b > 1)
+            if (b > 1)
             {
                 throw new ArgumentOutOfRangeException("Zero flag can only be set to 0 or 1");
             }
@@ -1614,10 +1676,11 @@ namespace EMU6502
             //status = (byte)(status & ((b << 1) + 1));  <-- currently not correct
 
             if (b == 1)  // yeah yeah I know, it's not even a ternary operator version of this. I might come through and compress the if/else
-                // statements that I can into ternary statements, but that does affect readability so ehhh maybe not.
+                         // statements that I can into ternary statements, but that does affect readability so ehhh maybe not.
             {
                 status = (byte)(status | 0x02);  // 0000 0010  we set the zero bit to true 
-            } else
+            }
+            else
             {
                 status = (byte)(status & 0xFD);  // 1111 1101  we set the zero bit to false
             }
@@ -1683,7 +1746,8 @@ namespace EMU6502
             if (b == 1)  // TODO: figure out the pure bitwise version of this too instead of an if statement.
             {
                 status = (byte)(status | 0x40);  // 0100 0000  we set the overflow (V) bit to true
-            } else
+            }
+            else
             {
                 status = (byte)(status & 0xBF);  // 1011 1111  we set that bit to false
             }
