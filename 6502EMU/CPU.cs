@@ -254,6 +254,11 @@ namespace EMU6502
                     CLC();
                     break;
 
+                // CLD
+                case 0xD8:
+                    CLD();
+                    break;
+
                 // TYA
                 case 0x98:
                     TYA();
@@ -820,6 +825,17 @@ namespace EMU6502
             PC += 1;
         }
 
+        private void CLD()  // set decimal flag to 0 (clear decimal mode)
+        {
+            if (DEBUG)
+            {
+                Console.WriteLine("CLD");
+            }
+            SetBCDFlag(false);
+            cycleDelayCounter = 2;
+            PC += 1;
+        }
+
         private void TYA()  // transfer Y to accumulator
         {
             if (DEBUG)
@@ -900,6 +916,10 @@ namespace EMU6502
          */
         private void BIT(MemoryAddressingMode addressingMode)
         {
+            if (DEBUG)
+            {
+                Console.WriteLine("BIT");
+            }
             ushort memLocation = GetMemoryAddress(addressingMode);
             SetCarryFlag((byte)(memory[memLocation] >> 7));  // set the carry flag to the 7th memory bit.
             SetOverflowFlag((byte)(memory[memLocation] >> 6));  // set the overflow flag to the 6th memory bit.
