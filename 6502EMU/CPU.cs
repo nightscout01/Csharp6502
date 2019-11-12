@@ -493,6 +493,32 @@ namespace EMU6502
                     LSR(MemoryAddressingMode.Absolute_Indexed_X);
                     break;
 
+                // CMP
+                case 0xC9:
+                    CMP(MemoryAddressingMode.Immediate);
+                    break;
+                case 0xC5:
+                    CMP(MemoryAddressingMode.Zero_Page);
+                    break;
+                case 0xD5:
+                    CMP(MemoryAddressingMode.Zero_Page_Indexed_X);
+                    break;
+                case 0xCD:
+                    CMP(MemoryAddressingMode.Absolute);
+                    break;
+                case 0xDD:
+                    CMP(MemoryAddressingMode.Absolute_Indexed_X);
+                    break;
+                case 0xD9:
+                    CMP(MemoryAddressingMode.Absolute_Indexed_Y);
+                    break;
+                case 0xC1:
+                    CMP(MemoryAddressingMode.Indexed_Indirect);
+                    break;
+                case 0xD1:
+                    CMP(MemoryAddressingMode.Indirect_Indexed);
+                    break;
+
 
                 // Conditional Branches
                 case 0xD0:
@@ -1052,6 +1078,49 @@ namespace EMU6502
             GeneralFlagHelper(A);  // set the proper processor flags to the proper values
         }
 
+        private void CMP(MemoryAddressingMode addressingMode)  // compare memory and accumulator and set flags accordingly
+            // kinda similar to x86-64's CMP
+        {
+            ushort memLocation = GetMemoryAddress(addressingMode);  // get the em
+            byte temp = (byte)(A - memory[memLocation]);
+
+            if(memory[memLocation] < A)  //TODO: compress this to no longer use an if statement.
+            {
+                SetCarryFlag(true);
+            } else
+            {
+                SetCarryFlag(false);
+            }
+            switch (addressingMode)
+            {
+                case MemoryAddressingMode.Immediate:
+                    cycleDelayCounter = 2;
+                    break;
+                case MemoryAddressingMode.Zero_Page:
+                    cycleDelayCounter = 3;
+                    break;
+                case MemoryAddressingMode.Zero_Page_Indexed_X:
+                    cycleDelayCounter = 4;
+                    break;
+                case MemoryAddressingMode.Absolute:
+                    cycleDelayCounter = 4;
+                    break;
+                case MemoryAddressingMode.Absolute_Indexed_X:
+                    cycleDelayCounter = 4;  // 5 on page break
+                    break;
+                case MemoryAddressingMode.Absolute_Indexed_Y:
+                    cycleDelayCounter = 4;  // 5 on page break
+                    break;
+                case MemoryAddressingMode.Indexed_Indirect:
+                    cycleDelayCounter = 6;
+                    break;
+                case MemoryAddressingMode.Indirect_Indexed:
+                    cycleDelayCounter = 5;  // 6 on page break
+                    break;
+            }
+            GeneralFlagHelper(temp);  // set negative and zero flags
+        }
+
         private void SEC()  // set carry flag to 1.
         {
             if (DEBUG)
@@ -1272,7 +1341,9 @@ namespace EMU6502
             {
                 Console.WriteLine("BRK");
             }
+            SetInterruptFlag(true);  // needed for some reason
             PC += 1;
+            cycleDelayCounter = 7;  // this takes 7 cycles
             Console.WriteLine(A);  // for DEBUG
             // GENERATE NON MASKABLE INTERRUPT OR SOMETHING 
         }
