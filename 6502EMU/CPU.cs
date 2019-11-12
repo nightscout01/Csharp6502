@@ -284,6 +284,11 @@ namespace EMU6502
                     TAY();
                     break;
 
+                // TXS
+                case 0x9A:
+                    TXS();
+                    break;
+
                 // INX
                 case 0xE8:
                     INX();
@@ -1097,6 +1102,17 @@ namespace EMU6502
             Y = A;
             GeneralFlagHelper(Y);  // apparently we should do this
             cycleDelayCounter = 2;  // somehow this takes two cycles as well
+            PC += 1;
+        }
+
+        private void TXS()  // transfer X to stack pointer
+        {
+            if (DEBUG)
+            {
+                Console.WriteLine("TXS");
+            }
+            S = X;
+            cycleDelayCounter = 2;
             PC += 1;
         }
 
