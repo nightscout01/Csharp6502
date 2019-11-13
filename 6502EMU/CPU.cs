@@ -82,18 +82,27 @@ namespace EMU6502
         public CPU(byte[] b, ushort startLocation)  // unlike CHIP-8, there's no defined program data start location
         {
             memory = new byte[65536];  // allocate 64K of "RAM" for the CPU
-            Array.Copy(b, 0, memory, startLocation, b.Length);  // copy the passed in program into RAM at the specified index.
+            Array.Copy(b, 0, memory, 0, b.Length);  // copy the passed in program into RAM at the specified index.
             PC = 0;  // set the program counter to 0
             S = 0; // apparently on the 6502 the stack pointer is NOT self initializing, most ROMS contain code to set it to the proper value,
                    // 0xFF, on startup
+
+            // we're just going to do that anyway, just in case
+            S = 0xFF;
             status = (byte)(status | 0x20);
             // 0010 0000  we set status bit 5 to 1, as it is not used and should always contain logical 1.
-            // on reset, the 6502 looks for the program address to jump to at addresses 0xFFFC and 0xFFFD (low byte and high byte respectively)
-            // we should store the start location in those addresses.
-            byte MSB = (byte)(startLocation >> 8);
-            byte LSB = (byte)(startLocation & 0x00FF);
-            memory[0xFFFC] = LSB;
-            memory[0xFFFD] = MSB;
+
+            /// on reset, the 6502 looks for the program address to jump to at addresses 0xFFFC and 0xFFFD (low byte and high byte respectively)
+            /// we should store the start location in those addresses.
+            if (startLocation != 0)
+            {
+                byte MSB = (byte)(startLocation >> 8);
+                byte LSB = (byte)(startLocation & 0x00FF);
+                memory[0xFFFC] = LSB;
+                memory[0xFFFD] = MSB;
+            }
+            // I'm learning that most of these ROMS are actually 64K big, and thus the rom itself when loaded into memory contains the start location
+            // parameter
         }
 
         public void InitializeCPU()  // essentially the same as a power on or reset (I should probably make the RESET interrupt just call this if I add it)
@@ -103,6 +112,7 @@ namespace EMU6502
             byte LSB = memory[0xFFFC];  // we could not even use the temp variables, but I'm trying to emphasize readability (or something). 
             PC = (ushort)((MSB << 8) | LSB);
             initialized = true;  // set the init flag.
+            Console.WriteLine(PC);
         }
 
 
@@ -226,7 +236,7 @@ namespace EMU6502
                 case 0x95:
                     STA(MemoryAddressingMode.Zero_Page_Indexed_X);
                     break;
-                case 0x80:
+                case 0x8D:
                     STA(MemoryAddressingMode.Absolute);
                     break;
                 case 0x9D:
