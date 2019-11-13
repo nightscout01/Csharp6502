@@ -1688,16 +1688,36 @@ namespace EMU6502
 
         }
 
-        private void BRK()  // generates a non-maskable interrupt
+        private void BRK()  // generates a non-maskable interrupt  (there is probably something wrong in how I implemented this)
+            // the exact things that this does are not clearly specified anywhere.
         {
             if (DEBUG)
             {
                 Console.WriteLine("BRK");
             }
             SetInterruptFlag(true);  // needed for some reason
-            PC += 1;
+            // SetSoftwareInterruptFlag(true);  // also needed maybe??? AAAAAAA I guess this flag is only kind of real.
+            // only the version of the status byte pushed onto the stack contains a set B flag apparently
+
+            // push the current program counter onto the stack.
+
+            PushToStack((byte)(PC+2 >> 8 & 0xFF));  // push MSB
+            PushToStack((byte)(PC+1 & 0xFF));  // push LSB
+
+            PushToStack((byte)(status | 0x10));  // push the status byte ORd with the weird software 
+
+            PC += 2;  // one piece of documentation says that BRK is a 2 byte opcode, with the second byte being a padding byte
+            byte MSB = memory[0xFFFF];
+            byte LSB = memory[0xFFFE];  // the MSB and LSB of the memory location saved in the irq interrupt vector
+            ushort memoryAddress = (ushort)((MSB << 8) | LSB);
+            PC = memoryAddress;
             cycleDelayCounter = 7;  // this takes 7 cycles
-            Console.WriteLine(A);  // for DEBUG
+          
+
+            if (DEBUG)
+            {
+                Console.WriteLine(A);  // for DEBUG
+            }
             // GENERATE NON MASKABLE INTERRUPT OR SOMETHING 
         }
 
@@ -2265,7 +2285,7 @@ namespace EMU6502
             }
         }
 
-        private void SetSoftwareInterruptFlag(bool b)  // set when a software interrupt is executed
+        private void SetSoftwareInterruptFlag(bool b)  // set when a software interrupt is executed   (B flag)
         {
             if (b)  // yeah I know I could use ternary operators or something but like ehhhh
             {
