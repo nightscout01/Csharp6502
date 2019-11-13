@@ -367,7 +367,7 @@ namespace EMU6502
                 case 0x75:
                     ADC(MemoryAddressingMode.Zero_Page_Indexed_X);
                     break;
-                case 0x60:
+                case 0x6D:
                     ADC(MemoryAddressingMode.Absolute);
                     break;
                 case 0x7D:
@@ -628,6 +628,11 @@ namespace EMU6502
                 // RTI
                 case 0x4D:
                     RTI();
+                    break;
+
+                // RTS
+                case 0x60:
+                    RTS();
                     break;
 
                 // ROL
@@ -1367,6 +1372,17 @@ namespace EMU6502
             ushort memLocation = (ushort)(LSB | (MSB << 8));  // create the 16 bit address out of the two 8 bit bytes
             cycleDelayCounter = 6;  // this operation takes 6 cycles
             PC = memLocation;  // set our PC to that mem location
+        }
+
+        private void RTS()  // return from subroutine
+        {
+            // RTS pulls the top two bytes off the stack (low byte first) and transfers program control to that address+1. 
+            // It is used, as expected, to exit a subroutine invoked via JSR which pushed the address-1. (from 6502.org)
+            byte LSB = PullFromStack();  // get the LSB and MSB of the PC we will "jump" to by pulling them off of the stack
+            byte MSB = PullFromStack();
+            ushort memLocation = (ushort)(LSB | (MSB << 8));  // create the 16 bit address out of the two 8 bit bytes
+            cycleDelayCounter = 6;  // this operation takes 6 cycles
+            PC = (ushort)(memLocation+1);  // set our PC to that mem location plus 1.
         }
 
         private void SEC()  // set carry flag to 1.
