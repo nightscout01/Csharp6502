@@ -314,6 +314,20 @@ namespace EMU6502
                     INY();
                     break;
 
+                // INC
+                case 0xE6:
+                    INC(MemoryAddressingMode.Zero_Page);
+                    break;
+                case 0xF6:
+                    INC(MemoryAddressingMode.Zero_Page_Indexed_X);
+                    break;
+                case 0xEE:
+                    INC(MemoryAddressingMode.Absolute);
+                    break;
+                case 0xFE:
+                    INC(MemoryAddressingMode.Absolute_Indexed_X);
+                    break;
+
                 // DEY
                 case 0x88:
                     DEY();
@@ -1427,6 +1441,30 @@ namespace EMU6502
                     break;
                 default:
                     throw new ArgumentException("Invalid Addressing Mode passed to DEM instruction: " + addressingMode);
+            }
+            GeneralFlagHelper(memory[memLocation]);
+        }
+
+        private void INC(MemoryAddressingMode addressingMode)  // increment memory by 1
+        {
+            ushort memLocation = GetMemoryAddress(addressingMode);
+            memory[memLocation] += 1;  // decrement the value in memory by 1.
+            switch (addressingMode)
+            {
+                case MemoryAddressingMode.Zero_Page:
+                    cycleDelayCounter = 5;
+                    break;
+                case MemoryAddressingMode.Zero_Page_Indexed_X:
+                    cycleDelayCounter = 6;
+                    break;
+                case MemoryAddressingMode.Absolute:
+                    cycleDelayCounter = 6;
+                    break;
+                case MemoryAddressingMode.Absolute_Indexed_X:
+                    cycleDelayCounter = 7;
+                    break;
+                default:
+                    throw new ArgumentException("Invalid Addressing Mode passed to INC instruction: " + addressingMode);
             }
             GeneralFlagHelper(memory[memLocation]);
         }
