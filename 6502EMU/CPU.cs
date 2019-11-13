@@ -269,6 +269,11 @@ namespace EMU6502
                     CLD();
                     break;
 
+                // SEI
+                case 0x78:
+                    SEI();
+                    break;
+
                 // CLI
                 case 0x58:
                     CLI();
@@ -1438,6 +1443,17 @@ namespace EMU6502
                 Console.WriteLine("CLD");
             }
             SetBCDFlag(false);
+            cycleDelayCounter = 2;
+            PC += 1;
+        }
+
+        private void SEI()  // set interrupt disable flag to 1
+        {
+            if (DEBUG)
+            {
+                Console.WriteLine("SEI");
+            }
+            SetInterruptFlag(true);
             cycleDelayCounter = 2;
             PC += 1;
         }
