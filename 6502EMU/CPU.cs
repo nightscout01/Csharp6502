@@ -620,6 +620,11 @@ namespace EMU6502
                     JMP(MemoryAddressingMode.Indirect);
                     break;
 
+                // JSR
+                case 0x20:
+                    JSR(MemoryAddressingMode.Absolute);
+                    break;
+
 
 
 
@@ -1135,7 +1140,7 @@ namespace EMU6502
         }
 
         private void CMP(MemoryAddressingMode addressingMode)  // compare memory and accumulator and set flags accordingly
-            // kinda similar to x86-64's CMP
+                                                               // kinda similar to x86-64's CMP
         {
             if (DEBUG)
             {
@@ -1144,10 +1149,11 @@ namespace EMU6502
             ushort memLocation = GetMemoryAddress(addressingMode);  // get the em
             byte temp = (byte)(A - memory[memLocation]);
 
-            if(memory[memLocation] < A)  //TODO: compress this to no longer use an if statement.
+            if (memory[memLocation] < A)  //TODO: compress this to no longer use an if statement.
             {
                 SetCarryFlag(true);
-            } else
+            }
+            else
             {
                 SetCarryFlag(false);
             }
@@ -1283,7 +1289,33 @@ namespace EMU6502
                 default:
                     throw new ArgumentException("Invalid Addressing Mode passed to JMP instruction: " + addressingMode);
             }
-           
+
+        }
+
+        private void JSR(MemoryAddressingMode addressingMode)  // jump to new location saving return address on stack (pushes return address -1 on the stack)
+        {
+            // TBH I don't really understand exactly in which way we should increment the PC before/after this instruction, watch for bugs here.
+            if (DEBUG)
+            {
+                Console.WriteLine("JSR");
+            }
+            if (addressingMode == MemoryAddressingMode.Absolute)  // only one possible addressing mode
+            {
+                ushort memoryLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // get the 16 bit absolute mem address
+                PC--;  // since the return from subroutine instruction increments the PC by 1, we decrement it by 1 here.
+                // (it's weird, I know)
+                byte MSB = (byte)((PC >> 8) & 0xFF);  // get the MSB
+                byte LSB = (byte)(PC & 0xFF);  // get the LSB
+                PushToStack(MSB);
+                PushToStack(LSB);  // push the two bytes onto the stack in little endian order
+
+                PC = memoryLocation;  // set the PC to the address that was specified by the instruction
+                cycleDelayCounter = 3;  // this operation takes 3 cycles
+            }
+            else
+            {
+                throw new ArgumentException("Invalid Addressing Mode passed to JSR instruction: " + addressingMode);
+            }
         }
 
         private void SEC()  // set carry flag to 1.
@@ -1746,7 +1778,7 @@ namespace EMU6502
             }
             PushToStack(status);
             cycleDelayCounter = 3;
-            PC += 1; 
+            PC += 1;
         }
 
         private void PLA()  // pull accumulator from stack  (pull byte at S [topmost byte] into accumulator register A)
@@ -1774,7 +1806,7 @@ namespace EMU6502
 
         private void PushToStack(byte b)
         {
-            if(S <= 0x00)
+            if (S <= 0x00)
             {
                 throw new InvalidOperationException("Stack Overflow");
             }
