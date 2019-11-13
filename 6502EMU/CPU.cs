@@ -642,7 +642,22 @@ namespace EMU6502
                     ROL(MemoryAddressingMode.Absolute_Indexed_X);
                     break;
 
-
+                // ROR
+                case 0x6A:
+                    ROR(MemoryAddressingMode.Accumulator);
+                    break;
+                case 0x66:
+                    ROR(MemoryAddressingMode.Zero_Page);
+                    break;
+                case 0x76:
+                    ROR(MemoryAddressingMode.Zero_Page_Indexed_X);
+                    break;
+                case 0x6E:
+                    ROR(MemoryAddressingMode.Absolute);
+                    break;
+                case 0x7E:
+                    ROR(MemoryAddressingMode.Absolute_Indexed_X);
+                    break;
 
 
 
@@ -1845,6 +1860,54 @@ namespace EMU6502
                 // (the carried out bit after a shift)
                 byte shiftedMem = (byte)(memory[memLocation] << 1);  // we shift memory to the left by 1. 
                 shiftedMem = (byte)(shiftedMem & carryBit);  // we set the LSB of memory to the previously saved carry flag.
+                memory[memLocation] = shiftedMem;  // actually save the value to the memory location
+                GeneralFlagHelper(memory[memLocation]);  // set the N and Z flags. 
+                switch (addressingMode)
+                {
+                    case MemoryAddressingMode.Zero_Page:
+                        cycleDelayCounter = 5;
+                        break;
+                    case MemoryAddressingMode.Zero_Page_Indexed_X:
+                        cycleDelayCounter = 6;
+                        break;
+                    case MemoryAddressingMode.Absolute:
+                        cycleDelayCounter = 6;
+                        break;
+                    case MemoryAddressingMode.Absolute_Indexed_X:
+                        cycleDelayCounter = 7;
+                        break;
+                    default:
+                        throw new ArgumentException("Invalid Addressing Mode passed to ROL instruction: " + addressingMode);
+                }
+            }
+
+        }
+
+        private void ROR(MemoryAddressingMode addressingMode)  // rotate right
+        {
+            if (DEBUG)  // watch for bugs?
+            {
+                Console.WriteLine("ROR");
+            }
+            if (addressingMode == MemoryAddressingMode.Accumulator)  // special case
+            {
+                byte carryBit = GetCarryFlag();  // get the carry flag and save it.
+                SetCarryFlag((byte)(A & 0x01));  // set the carry flag to the LSB of the accumulator (the carried out bit after a shift)
+                byte shiftedA = (byte)(A >> 1);  // we shift A to the right by 1. 
+                shiftedA = (byte)(shiftedA & (0x7F & (carryBit<<7)));  // we set the MSB of A to the previously saved carry flag.
+                A = shiftedA;  // actually save the value to the accumulator register
+                GeneralFlagHelper(A);  // set the rest of the flags appropriately.
+                PC += 1;  // don't forget to increment the program counter.
+                cycleDelayCounter = 2;  // this takes 2 cycles
+            }
+            else
+            {
+                ushort memLocation = GetMemoryAddress(addressingMode);  // get the memory location of the byte to rotate right
+                byte carryBit = GetCarryFlag();  // get the carry flag and save it.
+                SetCarryFlag((byte)(memory[memLocation] & 0x01));  // set the carry flag to the LSB of the memory 
+                // (the carried out bit after a shift)
+                byte shiftedMem = (byte)(memory[memLocation] >> 1);  // we shift A to the right by 1. 
+                shiftedMem = (byte)(shiftedMem & (0x7F & (carryBit<<7)));  // we set the MSB of A to the previously saved carry flag.
                 memory[memLocation] = shiftedMem;  // actually save the value to the memory location
                 switch (addressingMode)
                 {
