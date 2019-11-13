@@ -519,6 +519,28 @@ namespace EMU6502
                     CMP(MemoryAddressingMode.Indirect_Indexed);
                     break;
 
+                // CPX:
+                case 0xE0:
+                    CPX(MemoryAddressingMode.Immediate);
+                    break;
+                case 0xE4:
+                    CPX(MemoryAddressingMode.Zero_Page);
+                    break;
+                case 0xEC:
+                    CPX(MemoryAddressingMode.Absolute);
+                    break;
+
+                // CPY
+                case 0xC0:
+                    CPY(MemoryAddressingMode.Immediate);
+                    break;
+                case 0xC4:
+                    CPY(MemoryAddressingMode.Zero_Page);
+                    break;
+                case 0xCC:
+                    CPY(MemoryAddressingMode.Absolute);
+                    break;
+
 
                 // Conditional Branches
                 case 0xD0:
@@ -1125,6 +1147,74 @@ namespace EMU6502
                     throw new ArgumentException("Invalid Addressing Mode passed to CMP instruction: " + addressingMode);
             }
             GeneralFlagHelper(temp);  // set negative and zero flags
+        }
+
+        private void CPX(MemoryAddressingMode addressingMode)  // compare memory and X
+        {
+            if (DEBUG)
+            {
+                Console.WriteLine("CPX");
+            }
+            ushort memLocation = GetMemoryAddress(addressingMode);  // get the em
+            byte temp = (byte)(X - memory[memLocation]);
+
+            if (memory[memLocation] < X)  //TODO: compress this to no longer use an if statement.
+            {
+                SetCarryFlag(true);
+            }
+            else
+            {
+                SetCarryFlag(false);
+            }
+            switch (addressingMode)
+            {
+                case MemoryAddressingMode.Immediate:
+                    cycleDelayCounter = 2;
+                    break;
+                case MemoryAddressingMode.Zero_Page:
+                    cycleDelayCounter = 3;
+                    break;
+                case MemoryAddressingMode.Absolute:
+                    cycleDelayCounter = 4;
+                    break;
+                default:
+                    throw new ArgumentException("Invalid Addressing Mode passed to CPX instruction: " + addressingMode);
+            }
+            GeneralFlagHelper(temp);
+        }
+
+        private void CPY(MemoryAddressingMode addressingMode)  // compare memory and X
+        {
+            if (DEBUG)
+            {
+                Console.WriteLine("CPY");
+            }
+            ushort memLocation = GetMemoryAddress(addressingMode);  // get the em
+            byte temp = (byte)(Y - memory[memLocation]);
+
+            if (memory[memLocation] < Y)  //TODO: compress this to no longer use an if statement.
+            {
+                SetCarryFlag(true);
+            }
+            else
+            {
+                SetCarryFlag(false);
+            }
+            switch (addressingMode)
+            {
+                case MemoryAddressingMode.Immediate:
+                    cycleDelayCounter = 2;
+                    break;
+                case MemoryAddressingMode.Zero_Page:
+                    cycleDelayCounter = 3;
+                    break;
+                case MemoryAddressingMode.Absolute:
+                    cycleDelayCounter = 4;
+                    break;
+                default:
+                    throw new ArgumentException("Invalid Addressing Mode passed to CPY instruction: " + addressingMode);
+            }
+            GeneralFlagHelper(temp);
         }
 
         private void SEC()  // set carry flag to 1.
