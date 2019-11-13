@@ -324,6 +324,20 @@ namespace EMU6502
                     DEX();
                     break;
 
+                // DEM
+                case 0xC6:
+                    DEM(MemoryAddressingMode.Zero_Page);
+                    break;
+                case 0xD6:
+                    DEM(MemoryAddressingMode.Zero_Page_Indexed_X);
+                    break;
+                case 0xCE:
+                    DEM(MemoryAddressingMode.Absolute);
+                    break;
+                case 0xDE:
+                    DEM(MemoryAddressingMode.Absolute_Indexed_X);
+                    break;
+
                 // NOP
                 case 0xEA:
                     NOP();
@@ -1391,6 +1405,30 @@ namespace EMU6502
             GeneralFlagHelper(Y);  // apparently we should do this
             cycleDelayCounter = 2;  // somehow this takes two cycles as well
             PC += 1;
+        }
+
+        private void DEM(MemoryAddressingMode addressingMode)  // decrement memory by 1
+        {
+            ushort memLocation = GetMemoryAddress(addressingMode);
+            memory[memLocation] -= 1;  // decrement the value in memory by 1.
+            switch (addressingMode)
+            {
+                case MemoryAddressingMode.Zero_Page:
+                    cycleDelayCounter = 5;
+                    break;
+                case MemoryAddressingMode.Zero_Page_Indexed_X:
+                    cycleDelayCounter = 6;
+                    break;
+                case MemoryAddressingMode.Absolute:
+                    cycleDelayCounter = 6;
+                    break;
+                case MemoryAddressingMode.Absolute_Indexed_X:
+                    cycleDelayCounter = 7;
+                    break;
+                default:
+                    throw new ArgumentException("Invalid Addressing Mode passed to DEM instruction: " + addressingMode);
+            }
+            GeneralFlagHelper(memory[memLocation]);
         }
 
 
