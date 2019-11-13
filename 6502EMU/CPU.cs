@@ -259,6 +259,11 @@ namespace EMU6502
                     CLC();
                     break;
 
+                // SED
+                case 0xF8:
+                    SED();
+                    break;
+
                 // CLD
                 case 0xD8:
                     CLD();
@@ -1362,6 +1367,10 @@ namespace EMU6502
 
         private void RTI()  // return from interrupt (lmao what do I do here)
         {
+            if (DEBUG)
+            {
+                Console.WriteLine("RTI");
+            }
             // Note that unlike RTS, the return address on the stack is the actual address rather than the address-1.
             // Interesting, there's a lot of ambiguity about whether it's PC or PC+1 or PC-1 or whatever for these subroutine instructions :(
 
@@ -1376,6 +1385,10 @@ namespace EMU6502
 
         private void RTS()  // return from subroutine
         {
+            if (DEBUG)
+            {
+                Console.WriteLine("RTS");
+            }
             // RTS pulls the top two bytes off the stack (low byte first) and transfers program control to that address+1. 
             // It is used, as expected, to exit a subroutine invoked via JSR which pushed the address-1. (from 6502.org)
             byte LSB = PullFromStack();  // get the LSB and MSB of the PC we will "jump" to by pulling them off of the stack
@@ -1403,6 +1416,17 @@ namespace EMU6502
                 Console.WriteLine("CLC");
             }
             SetCarryFlag(false);
+            cycleDelayCounter = 2;
+            PC += 1;
+        }
+
+        private void SED()  // set decimal flag to 1 (set decimal mode)
+        {
+            if (DEBUG)
+            {
+                Console.WriteLine("SED");
+            }
+            SetBCDFlag(true);
             cycleDelayCounter = 2;
             PC += 1;
         }
