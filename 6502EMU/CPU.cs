@@ -612,7 +612,13 @@ namespace EMU6502
                     PLP();
                     break;
 
-
+                // JMP
+                case 0x4C:
+                    JMP(MemoryAddressingMode.Absolute);
+                    break;
+                case 0x6C:
+                    JMP(MemoryAddressingMode.Indirect);
+                    break;
 
 
 
@@ -1243,6 +1249,41 @@ namespace EMU6502
                     throw new ArgumentException("Invalid Addressing Mode passed to CPY instruction: " + addressingMode);
             }
             GeneralFlagHelper(temp);
+        }
+
+        public void JMP(MemoryAddressingMode addressingMode)  // jump to new Location
+        {
+            if (DEBUG)
+            {
+                Console.WriteLine("JMP");
+            }
+            // this instruction is a little odd in the way it looks for data in memory, therefore I will not use the GetMemoryAddress function.
+            byte LSB;
+            byte MSB;  // least and most significant bytes of a 16 byte address (used to jump to or indirectly to read a different memory add
+            ushort newPCLocation;
+            switch (addressingMode)
+            {
+                case MemoryAddressingMode.Absolute:
+                    LSB = memory[PC + 1];  // LSB and MSB of memory address to jump to.
+                    MSB = memory[PC + 2];
+                    newPCLocation = (ushort)((MSB << 8) | LSB);
+                    PC = newPCLocation;
+                    cycleDelayCounter = 3;
+                    break;
+                case MemoryAddressingMode.Indirect:
+                    cycleDelayCounter = 5;
+                    LSB = memory[PC + 1];  // LSB and MSB of memory address we need to get our memory address from.
+                    MSB = memory[PC + 2];
+                    ushort memLocation = (ushort)((MSB << 8) | LSB);  // the memory location where our actual new PC value is stored
+                    byte lowMem = memory[memLocation];
+                    byte highMem = memory[memLocation + 1];
+                    newPCLocation = (ushort)((highMem << 8) | lowMem);
+                    PC = newPCLocation;
+                    break;
+                default:
+                    throw new ArgumentException("Invalid Addressing Mode passed to JMP instruction: " + addressingMode);
+            }
+           
         }
 
         private void SEC()  // set carry flag to 1.
