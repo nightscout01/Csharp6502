@@ -6,6 +6,7 @@ using System;
 
 namespace EMU6502
 {
+    // As of 11/13/19, it appears that all of the 6502 opcodes have been implemented! :D, now it's just testing and finishing my TODOS
 
     enum MemoryAddressingMode  // this is just the worst (at least most instructions don't have all of them)
     {
