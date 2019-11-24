@@ -52,7 +52,7 @@ namespace EMU6502
         private byte status;  // status reg
         /*
          *  Bit No. 7   6   5   4   3   2   1   0
-                    S   V       B   D   I   Z   C
+         *          S   V       B   D   I   Z   C
          */
         private byte S;  // stack pointer.  The 6502 stack pointer holds the last byte of the memory address 0x01XX. 
                          // The 6502 stack grows down from 0x01FF to 0x0100. 
@@ -138,6 +138,7 @@ namespace EMU6502
                 Console.WriteLine("X: 0x{0:X}", X);
                 Console.WriteLine("Y: 0x{0:X}", Y);
                 Console.WriteLine("PC: 0x{0:X}", PC);
+                DebugPrintFlags();  // print out the status register flags
             }
             switch (opcode)  // there's got to be a better way to organize this. 
             {
@@ -2328,7 +2329,7 @@ namespace EMU6502
             }
         }
 
-        private void SetOverflowFlag(bool b)  // set when an operation produces a result too big to be held in a byte
+        private void SetOverflowFlag(bool b)  // set when an operation produces a result too big to be held in a byte (V flag)
         {
             if (b)  // yeah I know I could use ternary operators or something but like ehhhh
             {
@@ -2351,6 +2352,18 @@ namespace EMU6502
             {
                 status = (byte)(status & 0x7F);  // 0111 1111  we set that bit to false
             }
+        }
+
+        private void DebugPrintFlags()
+        {
+            //Bit No. 7   6   5   4   3   2   1   0
+            //        S   V       B   D   I   Z   C
+            Console.WriteLine("Flags:");
+            // Console.WriteLine("7 6 5 4 3 2 1 0");
+            Console.WriteLine("S V - B D I Z C");
+            Console.WriteLine(GetNegativeFlag() + " " + GetOverflowFlag() + " - " + "B " + "D " + "I " + GetZeroFlag() + " " + GetCarryFlag());
+            // ignoring BCD flag for now because we don't use it @-@
+            // also ignoring the B flag that doesn't actually exist ;(, also don't bother with the interrupt flag for now
         }
     }
 }
