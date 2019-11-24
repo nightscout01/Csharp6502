@@ -8,7 +8,7 @@ namespace EMU6502
 {
     class ConsoleMain
     {
-        private const string FILE_LOCATION = @"C:\Users\night\Downloads\6502test.bin";
+        private const string FILE_LOCATION = @"C:\Users\night\Downloads\6502_functional_test.bin";
         private const ushort START_LOCATION = 0x400;
         public static void Main(string[] args)
         {
@@ -18,6 +18,7 @@ namespace EMU6502
             while (true)
             {
                 EMU.EmulateCycle();
+               // Thread.Sleep(10);
                 Console.ReadLine(); // wait until enter key pressed before doing the next cycle
             }
         }

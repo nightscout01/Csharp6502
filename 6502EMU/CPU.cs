@@ -739,13 +739,13 @@ namespace EMU6502
 
         private void LDY(MemoryAddressingMode addressingMode)
         {
-            if (DEBUG)
-            {
-                Console.WriteLine("LDY");
-            }
             ushort memLocation;
             memLocation = GetMemoryAddress(addressingMode);//memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
             Y = memory[memLocation];  // load the data at that zero page memory location into X
+            if (DEBUG)
+            {
+                Console.WriteLine("LDY " + Y);
+            }
             switch (addressingMode)
             {
                 case MemoryAddressingMode.Immediate:  // cool switching on enum
@@ -1739,7 +1739,6 @@ namespace EMU6502
             {
                 Console.WriteLine("BNE");
             }
-            PC += 2;
             cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
             if (GetZeroFlag() == 0)  // we need to branch if the zero flag is not set (i.e. the result is not 0)
             {
@@ -1747,25 +1746,27 @@ namespace EMU6502
             }
             else
             {
+                PC += 2;
                 cycleDelayCounter = 2;
             }
         }
 
-        private void BEQ()
+        private void BEQ()  // branch on result 0
         {
             if (DEBUG)
             {
                 Console.WriteLine("BEQ");
             }
-            PC += 2;
             cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
             if (GetZeroFlag() == 1)  // we need to branch if the zero flag is set (i.e. the result is 0)
             {
+                Console.WriteLine("branching");
                 BranchHelper();  // perform the branch
             }
             else
             {
                 cycleDelayCounter = 2;
+                PC += 2;
             }
         }
 
@@ -1775,7 +1776,6 @@ namespace EMU6502
             {
                 Console.WriteLine("BCC");
             }
-            PC += 2;
             //Console.WriteLine(GetZeroFlag());
             cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
             if (GetCarryFlag() == 0)  // we need to branch if the carry flag is not set
@@ -1784,6 +1784,7 @@ namespace EMU6502
             }
             else
             {
+                PC += 2;
                 cycleDelayCounter = 2;
             }
         }
@@ -1794,7 +1795,6 @@ namespace EMU6502
             {
                 Console.WriteLine("BCS");
             }
-            PC += 2;
             //Console.WriteLine(GetZeroFlag());
             cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
             if (GetCarryFlag() == 1)  // we need to branch if the carry flag is set
@@ -1803,6 +1803,7 @@ namespace EMU6502
             }
             else
             {
+                PC += 2;
                 cycleDelayCounter = 2;
             }
         }
@@ -1813,7 +1814,6 @@ namespace EMU6502
             {
                 Console.WriteLine("BMI");
             }
-            PC += 2;
             cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
             if (GetNegativeFlag() == 1)  // we need to branch if the zero flag is set (i.e. the result is 0)
             {
@@ -1821,6 +1821,7 @@ namespace EMU6502
             }
             else
             {
+                PC += 2;
                 cycleDelayCounter = 2;
             }
         }
@@ -1831,7 +1832,6 @@ namespace EMU6502
             {
                 Console.WriteLine("BPL");
             }
-            PC += 2;
             cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
             if (GetNegativeFlag() == 0)  // we need to branch if the zero flag is set (i.e. the result is 0)
             {
@@ -1840,6 +1840,7 @@ namespace EMU6502
             else
             {
                 cycleDelayCounter = 2;
+                PC += 2;
             }
         }
 
@@ -1849,7 +1850,6 @@ namespace EMU6502
             {
                 Console.WriteLine("BVC");
             }
-            PC += 2;
             cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
             if (GetOverflowFlag() == 0)  // we need to branch if the zero flag is set (i.e. the result is 0)
             {
@@ -1858,6 +1858,7 @@ namespace EMU6502
             else
             {
                 cycleDelayCounter = 2;
+                PC += 2;
             }
         }
 
@@ -1867,7 +1868,7 @@ namespace EMU6502
             {
                 Console.WriteLine("BVS");
             }
-            PC += 2;
+            
             cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
             if (GetOverflowFlag() == 0)  // we need to branch if the zero flag is set (i.e. the result is 0)
             {
@@ -1876,12 +1877,13 @@ namespace EMU6502
             else
             {
                 cycleDelayCounter = 2;
+                PC += 2;
             }
         }
 
         private void BranchHelper()  // this method actually executes a branch. All the branch actions are the same, only the conditionals are different.
         {
-            PC--;
+            PC++;
             if (memory[PC] > 0x7f)
             {
                 PC -= (ushort)(~memory[PC] & 0x00ff);
@@ -1889,6 +1891,7 @@ namespace EMU6502
             else
             {
                 PC += (ushort)(memory[PC] & 0x00ff);
+                PC++;
             }
             cycleDelayCounter = 3;  // it's 3 cycles if there is a jump
             Console.WriteLine("current PC is: {0:X}", PC);
