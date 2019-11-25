@@ -131,6 +131,10 @@ namespace EMU6502
             // so we'll have to increment the program counter by a variable number
             byte opcode = memory[PC];  // get the opcode (opcodes are only a byte, how much data is actually used per 
             // instruction depends on the instruction)
+            if(opcode == 0x90)
+            {
+                Console.ReadLine();
+            }
             if (DEBUG)
             {
                 Console.WriteLine("Current Opcode: {0:X}", opcode);  // FOR DEBUGGING
@@ -1216,7 +1220,7 @@ namespace EMU6502
             ushort memLocation = GetMemoryAddress(addressingMode);  // get the em
             byte temp = (byte)(A - memory[memLocation]);
 
-            if (memory[memLocation] < A)  //TODO: compress this to no longer use an if statement.
+            if (memory[memLocation] <= A)  //TODO: compress this to no longer use an if statement.
             {
                 SetCarryFlag(true);
             }
@@ -1265,7 +1269,7 @@ namespace EMU6502
             ushort memLocation = GetMemoryAddress(addressingMode);  // get the em
             byte temp = (byte)(X - memory[memLocation]);
 
-            if (memory[memLocation] < X)  //TODO: compress this to no longer use an if statement.
+            if (memory[memLocation] <= X)  //TODO: compress this to no longer use an if statement.
             {
                 SetCarryFlag(true);
             }
@@ -1299,7 +1303,7 @@ namespace EMU6502
             ushort memLocation = GetMemoryAddress(addressingMode);  // get the em
             byte temp = (byte)(Y - memory[memLocation]);
 
-            if (memory[memLocation] < Y)  //TODO: compress this to no longer use an if statement.
+            if (memory[memLocation] <= Y)  //TODO: compress this to no longer use an if statement.
             {
                 SetCarryFlag(true);
             }
@@ -1894,6 +1898,7 @@ namespace EMU6502
             PC++;
             var valueToMove = memory[PC];  // this whole thing doesn't seem to make a difference
             var movement = valueToMove > 127 ? (valueToMove - 255) : valueToMove;  // ternary operator 
+            Console.WriteLine(movement);
             if(movement >= 0)
             {
                 PC += (ushort) movement;
