@@ -18,8 +18,8 @@ namespace EMU6502
             while (true)
             {
                 EMU.EmulateCycle();
-               // Thread.Sleep(10);
-                Console.ReadLine(); // wait until enter key pressed before doing the next cycle
+                //Thread.Sleep(10);
+               // Console.ReadLine(); // wait until enter key pressed before doing the next cycle
             }
         }
     }

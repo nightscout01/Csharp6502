@@ -873,7 +873,7 @@ namespace EMU6502
             memory[memLocation] = A;
             if (DEBUG)
             {
-                Console.WriteLine("STA {0:X}", memory[memLocation]);
+                Console.WriteLine("STA {0:X}", memLocation);
             }
             switch (addressingMode)
             {
@@ -910,6 +910,9 @@ namespace EMU6502
                 Console.WriteLine("ADC");
             }
             // TODO: this method needs to set V (overflow) flag when required, but ehh I'll get to that later
+            // this might help: 
+            // The definition of the 6502 overflow flag is that it is set if the result of a signed 
+            // addition or subtraction doesn't fit into a signed byte
             ushort memLocation = GetMemoryAddress(addressingMode);
             // A += GetCarryFlag();  // we add the carry flag to the accumulator in this operation.
             int val = memory[memLocation] + A + GetCarryFlag();
@@ -1287,7 +1290,7 @@ namespace EMU6502
             GeneralFlagHelper(temp);
         }
 
-        private void CPY(MemoryAddressingMode addressingMode)  // compare memory and X
+        private void CPY(MemoryAddressingMode addressingMode)  // compare memory and Y
         {
             if (DEBUG)
             {
@@ -1781,6 +1784,10 @@ namespace EMU6502
             cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
             if (GetCarryFlag() == 0)  // we need to branch if the carry flag is not set
             {
+                if (DEBUG)
+                {
+                    Console.WriteLine("branching");
+                }
                 BranchHelper();  // perform the branch
             }
             else
@@ -1885,15 +1892,25 @@ namespace EMU6502
         private void BranchHelper()  // this method actually executes a branch. All the branch actions are the same, only the conditionals are different.
         {
             PC++;
-            if (memory[PC] > 0x7f)
+            var valueToMove = memory[PC];  // this whole thing doesn't seem to make a difference
+            var movement = valueToMove > 127 ? (valueToMove - 255) : valueToMove;  // ternary operator 
+            if(movement >= 0)
             {
-                PC -= (ushort)(~memory[PC] & 0x00ff);
-            }
-            else
+                PC += (ushort) movement;
+                PC++;  // we do this for some reason
+            } else
             {
-                PC += (ushort)(memory[PC] & 0x00ff);
-                PC++;
+                PC -= (ushort)(-1 * movement);
             }
+            //if (memory[PC] > 0x7f)
+            //{
+            //    PC -= (ushort)(~memory[PC] & 0x00ff);
+            //}
+            //else
+            //{
+            //    PC += (ushort)(memory[PC] & 0x00ff);
+            //    PC++;
+            //}
             cycleDelayCounter = 3;  // it's 3 cycles if there is a jump
             Console.WriteLine("current PC is: {0:X}", PC);
         }
@@ -2118,16 +2135,16 @@ namespace EMU6502
             switch (addressingMode)
             {
                 case MemoryAddressingMode.Absolute:
-                    memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // get the 16 bit absolute mem address
+                    memLocation = (ushort)(memory[PC + 1] | memory[PC + 2] << 8);  // get the 16 bit absolute mem address
                     PC += 3; // increment program counter by 3
                     break;
                 case MemoryAddressingMode.Absolute_Indexed_X:
-                    memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // get the 16 bit absolute mem address
+                    memLocation = (ushort)(memory[PC + 1] | memory[PC + 2] << 8);  // get the 16 bit absolute mem address
                     memLocation += X;
                     PC += 3;
                     break;
                 case MemoryAddressingMode.Absolute_Indexed_Y:
-                    memLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // get the 16 bit absolute mem address
+                    memLocation = (ushort)(memory[PC + 1]| memory[PC + 2] << 8);  // get the 16 bit absolute mem address
                     memLocation += Y;
                     PC += 3;
                     break;
@@ -2361,7 +2378,7 @@ namespace EMU6502
             Console.WriteLine("Flags:");
             // Console.WriteLine("7 6 5 4 3 2 1 0");
             Console.WriteLine("S V - B D I Z C");
-            Console.WriteLine(GetNegativeFlag() + " " + GetOverflowFlag() + " - " + "B " + "D " + "I " + GetZeroFlag() + " " + GetCarryFlag());
+            Console.WriteLine(GetNegativeFlag() + " " + GetOverflowFlag() + " - " + "0 " + "0 " + "0 " + GetZeroFlag() + " " + GetCarryFlag());
             // ignoring BCD flag for now because we don't use it @-@
             // also ignoring the B flag that doesn't actually exist ;(, also don't bother with the interrupt flag for now
         }
