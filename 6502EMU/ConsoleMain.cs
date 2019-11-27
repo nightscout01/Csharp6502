@@ -18,8 +18,14 @@ namespace EMU6502
             while (true)
             {
                 EMU.EmulateCycle();
+                //EMU.DEBUG = true;
+                if (EMU.PC == 0x5E4)
+                {
+                    EMU.DEBUG = true;
+                    Console.ReadLine();
+                }
                 //Thread.Sleep(10);
-               // Console.ReadLine(); // wait until enter key pressed before doing the next cycle
+                // Console.ReadLine(); // wait until enter key pressed before doing the next cycle
             }
         }
     }

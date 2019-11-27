@@ -46,9 +46,9 @@ namespace EMU6502
          *  Find a consistent and good way to handle getting and setting flags. Having both byte (0 or 1) and boolean versions for set is odd.
          */
         private bool initialized;   // a cheap hack, but I believe it's needed for sanity checking.
-        private const bool DEBUG = true;
+        public bool DEBUG = false;
         private readonly byte[] memory;
-        private ushort PC;  // program counter
+        public ushort PC { get; protected set; }  // program counter
         private byte status;  // status reg
         /*
          *  Bit No. 7   6   5   4   3   2   1   0
@@ -60,6 +60,9 @@ namespace EMU6502
         private byte Y;  // register Y
         private byte A;  // accumulator register
         private int cycleDelayCounter;
+        public int CurrentOPCode { get; protected set; }  // for use with our debugger, might be removed in final version
+
+
         // 6502 instruction operation codes (opcodes) 
         // are eight-bits long and have the general form aaabbbcc, where aaa and cc 
         // define the opcode, and bbb defines the addressing mode.
@@ -88,7 +91,10 @@ namespace EMU6502
                    // 0xFF, on startup
 
             // we're just going to do that anyway, just in case
-            S = 0xFF;
+
+           // S = 0xFF;  // not sure whether to intialize stack or not
+
+
             status = (byte)(status | 0x20);
             // 0010 0000  we set status bit 5 to 1, as it is not used and should always contain logical 1.
 
@@ -131,6 +137,7 @@ namespace EMU6502
             // so we'll have to increment the program counter by a variable number
             byte opcode = memory[PC];  // get the opcode (opcodes are only a byte, how much data is actually used per 
             // instruction depends on the instruction)
+            CurrentOPCode = opcode;  // set the opcode field for the debugger
             if(opcode == 0x90)
             {
                 Console.ReadLine();
@@ -1219,7 +1226,11 @@ namespace EMU6502
             }
             ushort memLocation = GetMemoryAddress(addressingMode);  // get the em
             byte temp = (byte)(A - memory[memLocation]);
-
+            if (DEBUG)
+            {
+                Console.WriteLine("Data at mem is 0x{0:X}", memory[memLocation]);
+                Console.WriteLine("A is 0x{0:X}", A);
+            }
             if (memory[memLocation] <= A)  //TODO: compress this to no longer use an if statement.
             {
                 SetCarryFlag(true);
@@ -1768,7 +1779,10 @@ namespace EMU6502
             cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
             if (GetZeroFlag() == 1)  // we need to branch if the zero flag is set (i.e. the result is 0)
             {
-                Console.WriteLine("branching");
+                if (DEBUG)
+                {
+                    Console.WriteLine("branching");
+                }
                 BranchHelper();  // perform the branch
             }
             else
@@ -1917,7 +1931,10 @@ namespace EMU6502
             //    PC++;
             //}
             cycleDelayCounter = 3;  // it's 3 cycles if there is a jump
-            Console.WriteLine("current PC is: {0:X}", PC);
+            if (DEBUG)
+            {
+                Console.WriteLine("current PC is: {0:X}", PC);
+            }
         }
 
 
@@ -1952,6 +1969,10 @@ namespace EMU6502
                 Console.WriteLine("PLA");
             }
             A = PullFromStack();
+            if (DEBUG)
+            {
+                Console.WriteLine("A from stack is 0x{0:X}", A);
+            }
             cycleDelayCounter = 4;  // this operation takes 4 cycles
             PC += 1;
         }
@@ -2065,7 +2086,7 @@ namespace EMU6502
 
         private void PushToStack(byte b)
         {
-            if (S <= 0x00)
+            if (S <= 0x00)  // should it be <= or just <
             {
                 throw new InvalidOperationException("Stack Overflow");
             }
@@ -2080,9 +2101,9 @@ namespace EMU6502
             {
                 throw new InvalidOperationException("Error: stack value cannot be greater than 0xFF");
             }
+            S += 0x1;  // increment the stack pointer up by 1.
             ushort stackMem = (ushort)(0x0100 | S);  // generate our 16 bit actual memory address from our 8 bit stack pointer "address"
             byte toReturn = memory[stackMem];  // get the data from that memory address and store it in a byte that we will return
-            S += 0x1;  // increment the stack pointer up by 1.
             return toReturn;  // return the byte we retrieved.
         }
 
