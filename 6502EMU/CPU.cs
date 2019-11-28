@@ -936,6 +936,9 @@ namespace EMU6502
             {
                 SetCarryFlag(false);
             }
+
+            SetOverflowFlag((((A ^ val) & 0x80) != 0) && (((A ^ memory[memLocation]) & 0x80) == 0));  // this is ridiculous
+
             A = (byte)val;
             switch (addressingMode)
             {
@@ -1896,7 +1899,7 @@ namespace EMU6502
             }
             
             cycleDelayCounter = 2;  // add 1 if branch occurs on same page, add 2 if it branches to another page.
-            if (GetOverflowFlag() == 0)  // we need to branch if the zero flag is set (i.e. the result is 0)
+            if (GetOverflowFlag() == 1)  // we need to branch if the overflow flag is set
             {
                 BranchHelper();  // perform the branch
             }
