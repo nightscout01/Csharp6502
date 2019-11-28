@@ -1960,7 +1960,9 @@ namespace EMU6502
             {
                 Console.WriteLine("PHP");
             }
-            PushToStack(status);
+            PushToStack((byte)(status & 0x30));  // push the B flag and set that one unused one (5) to 1 as well
+            // software instructions BRK & PHP will push the B flag as being 1.
+
             cycleDelayCounter = 3;
             PC += 1;
         }
