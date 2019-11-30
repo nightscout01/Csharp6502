@@ -138,10 +138,10 @@ namespace EMU6502
             byte opcode = memory[PC];  // get the opcode (opcodes are only a byte, how much data is actually used per 
             // instruction depends on the instruction)
             CurrentOPCode = opcode;  // set the opcode field for the debugger
-            if(opcode == 0x90)
-            {
-                Console.ReadLine();
-            }
+            //if(opcode == 0x90)
+            //{
+            //    Console.ReadLine();
+            //}
             if (DEBUG)
             {
                 Console.WriteLine("Current Opcode: {0:X}", opcode);  // FOR DEBUGGING
@@ -1975,6 +1975,7 @@ namespace EMU6502
                 Console.WriteLine("PLA");
             }
             A = PullFromStack();
+            GeneralFlagHelper(A);
             if (DEBUG)
             {
                 Console.WriteLine("A from stack is 0x{0:X}", A);
@@ -1989,9 +1990,8 @@ namespace EMU6502
             {
                 Console.WriteLine("PLP");
             }
-            status = PullFromStack();  // set the status register to the byte we just pulled off of the stack.
-                // theoretically we should remove the pushed "B" flag with a binary operation but since it doesn't really matter and is easier to debug
-                // I won't for now
+            status = ((byte)(PullFromStack() & 0xEF));  // set the status register to the byte we just pulled off of the stack.
+              // remove the B flag from the pulled data because that is what is needed
             cycleDelayCounter = 4;  // this operation takes 4 cycles
             PC += 1;
         }
