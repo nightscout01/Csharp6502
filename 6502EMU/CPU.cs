@@ -927,6 +927,7 @@ namespace EMU6502
             ushort memLocation = GetMemoryAddress(addressingMode);
             // A += GetCarryFlag();  // we add the carry flag to the accumulator in this operation.
             int val = memory[memLocation] + A + GetCarryFlag();
+            SetOverflowFlag((((A ^ val) & 0x80) != 0) && (((A ^ memory[memLocation]) & 0x80) == 0));  // this is ridiculous
             if (val > 255)
             {
                 SetCarryFlag(true);
