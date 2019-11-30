@@ -1961,7 +1961,7 @@ namespace EMU6502
             {
                 Console.WriteLine("PHP");
             }
-            PushToStack((byte)(status & 0x30));  // push the B flag and set that one unused one (5) to 1 as well
+            PushToStack((byte)(status | 0x30));  // push the B flag and set that one unused one (5) to 1 as well
             // software instructions BRK & PHP will push the B flag as being 1.
 
             cycleDelayCounter = 3;
@@ -1990,6 +1990,8 @@ namespace EMU6502
                 Console.WriteLine("PLP");
             }
             status = PullFromStack();  // set the status register to the byte we just pulled off of the stack.
+                // theoretically we should remove the pushed "B" flag with a binary operation but since it doesn't really matter and is easier to debug
+                // I won't for now
             cycleDelayCounter = 4;  // this operation takes 4 cycles
             PC += 1;
         }
@@ -2403,6 +2405,26 @@ namespace EMU6502
             }
         }
 
+        private byte GetReservedFlag()  // for debugging only, should always return 1
+        {
+            return (byte)((status >> 5) & 0x01);
+        }
+
+        private byte GetBreakFlag()  // the B flag (doesn't actually exist but whatever)
+        {
+            return (byte)((status >> 4) & 0x01);
+        }
+
+        private byte GetDecimalFlag()  // the D flag
+        {
+            return (byte)((status >> 3) & 0x01);
+        }
+
+        private byte GetInterruptFlag()  // the I flag
+        {
+            return (byte)((status >> 2) & 0x01);
+        }
+
         private void DebugPrintFlags()
         {
             //Bit No. 7   6   5   4   3   2   1   0
@@ -2410,7 +2432,8 @@ namespace EMU6502
             Console.WriteLine("Flags:");
             // Console.WriteLine("7 6 5 4 3 2 1 0");
             Console.WriteLine("S V - B D I Z C");
-            Console.WriteLine(GetNegativeFlag() + " " + GetOverflowFlag() + " - " + "0 " + "0 " + "0 " + GetZeroFlag() + " " + GetCarryFlag());
+            Console.WriteLine(GetNegativeFlag() + " " + GetOverflowFlag() + " " +GetReservedFlag() + " "+ GetBreakFlag() + " " + GetDecimalFlag() + " " + GetInterruptFlag() + " " + 
+                GetZeroFlag() + " " + GetCarryFlag());
             // ignoring BCD flag for now because we don't use it @-@
             // also ignoring the B flag that doesn't actually exist ;(, also don't bother with the interrupt flag for now
         }
