@@ -1413,7 +1413,7 @@ namespace EMU6502
             // Note that unlike RTS, the return address on the stack is the actual address rather than the address-1.
             // Interesting, there's a lot of ambiguity about whether it's PC or PC+1 or PC-1 or whatever for these subroutine instructions :(
 
-            status = PullFromStack();  // we first set the flags by pulling off of the stack.
+            status = (byte)(PullFromStack() & 0xEF);  // we first set the flags by pulling off of the stack. (we remove the B flag)
 
             byte LSB = PullFromStack();  // get the LSB and MSB of the PC we will "jump" to by pulling them off of the stack
             byte MSB = PullFromStack();
