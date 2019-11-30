@@ -1387,7 +1387,7 @@ namespace EMU6502
             }
             if (addressingMode == MemoryAddressingMode.Absolute)  // only one possible addressing mode
             {
-                ushort memoryLocation = (ushort)(memory[PC + 1] << 8 | memory[PC + 2]);  // get the 16 bit absolute mem address
+                ushort memoryLocation = GetMemoryAddress(addressingMode);
                 PC--;  // since the return from subroutine instruction increments the PC by 1, we decrement it by 1 here.
                 // (it's weird, I know)
                 byte MSB = (byte)((PC >> 8) & 0xFF);  // get the MSB
@@ -1737,9 +1737,10 @@ namespace EMU6502
             PushToStack((byte)(PC+2 >> 8 & 0xFF));  // push MSB
             PushToStack((byte)(PC+1 & 0xFF));  // push LSB
 
-            PushToStack((byte)(status | 0x10));  // push the status byte ORd with the weird software 
+            PushToStack((byte)(status | 0x30));  // push the status byte ORd with 0x30 to set the B flag and to make sure that the unused flag is still 1.
 
             PC += 2;  // one piece of documentation says that BRK is a 2 byte opcode, with the second byte being a padding byte
+            // ^ i don't think this actually does anything as the 
             byte MSB = memory[0xFFFF];
             byte LSB = memory[0xFFFE];  // the MSB and LSB of the memory location saved in the irq interrupt vector
             ushort memoryAddress = (ushort)((MSB << 8) | LSB);
@@ -1916,7 +1917,10 @@ namespace EMU6502
             PC++;
             var valueToMove = memory[PC];  // this whole thing doesn't seem to make a difference
             var movement = valueToMove > 127 ? (valueToMove - 255) : valueToMove;  // ternary operator 
-            Console.WriteLine(movement);
+            if (DEBUG)
+            {
+                Console.WriteLine(movement);
+            }
             if(movement >= 0)
             {
                 PC += (ushort) movement;
@@ -1990,8 +1994,9 @@ namespace EMU6502
             {
                 Console.WriteLine("PLP");
             }
-            status = ((byte)(PullFromStack() & 0xEF));  // set the status register to the byte we just pulled off of the stack.
+            status = (byte)((PullFromStack() | 0x20)); //& 0xEF)| 0x20);  // set the status register to the byte we just pulled off of the stack.
               // remove the B flag from the pulled data because that is what is needed
+              // but make sure that bit 5 is set to 1.
             cycleDelayCounter = 4;  // this operation takes 4 cycles
             PC += 1;
         }
