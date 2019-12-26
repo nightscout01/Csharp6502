@@ -42,6 +42,7 @@ namespace EMU6502
     {
         /* BIG TODOS:
          *  V/overflow flag is not set in the ADC instruction, and probably not set anywhere
+         *   -it is set in the ADC instruction, not currently set in the SBC instruction
          *  Not fully cycle accurate as when we go over a page boundary we're supposed to add an extra cycle, I haven't done that yet.
          *  Find a consistent and good way to handle getting and setting flags. Having both byte (0 or 1) and boolean versions for set is odd.
          */
