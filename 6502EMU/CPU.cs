@@ -25,7 +25,7 @@ namespace EMU6502
         Indirect_Indexed = 12
     }
 
-    enum CPUFlag  // this could come in handy
+    enum CPUFlag  // this could come in handy (not currently used though)
     {
         C = 0,
         Z = 1,
