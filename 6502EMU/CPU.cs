@@ -2102,10 +2102,6 @@ namespace EMU6502
 
         private void PushToStack(byte b)
         {
-            if (S <= 0x00)  // should it be <= or just <
-            {
-                throw new InvalidOperationException("Stack Overflow");
-            }
             ushort stackMem = (ushort)(0x0100 | S);  // generate our 16 bit actual memory address from our 8 bit stack pointer "address"
             memory[stackMem] = b;  // set the data at this memory location to be the data we want to push to the stack
             S -= 0x1;  // we only store 1 byte at a time on the stack, so after we're done storing our data we decrement the stack pointer by 1.
@@ -2113,10 +2109,6 @@ namespace EMU6502
 
         private byte PullFromStack()
         {
-            if (S >= 0xff)
-            {
-                throw new InvalidOperationException("Error: stack value cannot be greater than 0xFF");
-            }
             S += 0x1;  // increment the stack pointer up by 1.
             ushort stackMem = (ushort)(0x0100 | S);  // generate our 16 bit actual memory address from our 8 bit stack pointer "address"
             byte toReturn = memory[stackMem];  // get the data from that memory address and store it in a byte that we will return
