@@ -150,6 +150,7 @@ namespace EMU6502
                 Console.WriteLine("X: 0x{0:X}", X);
                 Console.WriteLine("Y: 0x{0:X}", Y);
                 Console.WriteLine("PC: 0x{0:X}", PC);
+                Console.WriteLine("S: 0x{0:X}",S);
                 DebugPrintFlags();  // print out the status register flags
             }
             switch (opcode)  // there's got to be a better way to organize this. 
@@ -885,7 +886,7 @@ namespace EMU6502
             memory[memLocation] = A;
             if (DEBUG)
             {
-                Console.WriteLine("STA {0:X}", memLocation);
+                Console.WriteLine("STA 0x{0:X}", memLocation);
             }
             switch (addressingMode)
             {
@@ -1729,7 +1730,6 @@ namespace EMU6502
             {
                 Console.WriteLine("BRK");
             }
-            SetInterruptFlag(true);  // needed for some reason
             // SetSoftwareInterruptFlag(true);  // also needed maybe??? AAAAAAA I guess this flag is only kind of real.
             // only the version of the status byte pushed onto the stack contains a set B flag apparently
 
@@ -1738,8 +1738,10 @@ namespace EMU6502
             PushToStack((byte)(PC+2 >> 8 & 0xFF));  // push MSB
             PushToStack((byte)(PC+1 & 0xFF));  // push LSB
 
-            PushToStack((byte)(status | 0x30));  // push the status byte ORd with 0x30 to set the B flag and to make sure that the unused flag is still 1.
+            PushToStack((byte)(status | 0x30));  // push the status byte ORd with 0x30 to set the B flag is set and that that the 
+            // unused flag is still 1.
 
+            SetInterruptFlag(true);  // this needs to happen AFTER we push to the stack
             PC += 2;  // one piece of documentation says that BRK is a 2 byte opcode, with the second byte being a padding byte
             // ^ i don't think this actually does anything as the 
             byte MSB = memory[0xFFFF];
