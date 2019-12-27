@@ -506,7 +506,7 @@ namespace EMU6502
                 case 0x55:
                     EOR(MemoryAddressingMode.Zero_Page_Indexed_X);
                     break;
-                case 0x40:
+                case 0x4D:
                     EOR(MemoryAddressingMode.Absolute);
                     break;
                 case 0x5D:
@@ -661,7 +661,7 @@ namespace EMU6502
                     break;
 
                 // RTI
-                case 0x4D:
+                case 0x40:
                     RTI();
                     break;
 
@@ -711,8 +711,8 @@ namespace EMU6502
 
 
                 default:
-                    throw new ArgumentException("ERROR: unknown opcode found: " + opcode);  // it's not going to be hex formatted but it's better
-                                                                                            // than nothing
+                    string errorMessage = "ERROR: unknown opcode found: " + Convert.ToString(opcode, 16) + " at PC " + Convert.ToString(PC, 16);
+                    throw new ArgumentException(errorMessage);  // make the error message hex formatted
             }
         }
 
@@ -1735,14 +1735,14 @@ namespace EMU6502
 
             // push the current program counter onto the stack.
 
-            PushToStack((byte)(PC+2 >> 8 & 0xFF));  // push MSB
-            PushToStack((byte)(PC+1 & 0xFF));  // push LSB
+            PushToStack((byte)(PC+3 >> 8 & 0xFF));  // push MSB
+            PushToStack((byte)(PC+2 & 0xFF));  // push LSB
 
             PushToStack((byte)(status | 0x30));  // push the status byte ORd with 0x30 to set the B flag is set and that that the 
             // unused flag is still 1.
 
             SetInterruptFlag(true);  // this needs to happen AFTER we push to the stack
-            PC += 2;  // one piece of documentation says that BRK is a 2 byte opcode, with the second byte being a padding byte
+         //   PC += 2;  // one piece of documentation says that BRK is a 2 byte opcode, with the second byte being a padding byte
             // ^ i don't think this actually does anything as the 
             byte MSB = memory[0xFFFF];
             byte LSB = memory[0xFFFE];  // the MSB and LSB of the memory location saved in the irq interrupt vector
