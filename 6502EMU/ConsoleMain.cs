@@ -23,10 +23,10 @@ namespace EMU6502
             {
                 EMU.EmulateCycle();
                 //EMU.DEBUG = true;
-                if (EMU.PC == 0xF00)
+                if (EMU.PC == 0xF24)
                 {
                     EMU.DEBUG = true;
-                    Console.ReadLine();
+                  //  Console.ReadLine();
                 }
                 //Thread.Sleep(10);
                 // Console.ReadLine(); // wait until enter key pressed before doing the next cycle

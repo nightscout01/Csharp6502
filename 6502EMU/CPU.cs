@@ -2187,7 +2187,8 @@ namespace EMU6502
                     PC += 2;
                     break;
                 case MemoryAddressingMode.Indexed_Indirect:
-                    memLocation = (ushort)(memory[PC + 1] + X);  // the memory address of the LSB of the memory address we want.
+                    memLocation = (ushort)((memory[PC + 1] + X) % 0xFF);  // the memory address of the LSB of the memory address we want.
+                        // need wraparound for indexed indirect too
                     LSB = memory[memLocation];
                     MSB = memory[memLocation + 1];
                     memLocation = (ushort)(MSB << 8 | LSB);  // it's little endian? so we have to do this, maybe C#'s casting isn't so bad after all.
@@ -2230,11 +2231,19 @@ namespace EMU6502
                     PC += 2;
                     break;
                 case MemoryAddressingMode.Zero_Page_Indexed_X:
-                    memLocation = (ushort)(memory[PC + 1] + X);
+                    memLocation = (ushort)(memory[PC + 1] + X);  // must allow for zero-page wraparound if the result is greater than 0xFF
+                    if (memLocation > 0xFF)
+                    {
+                        memLocation -= 0x100;
+                    }
                     PC += 2;
                     break;
                 case MemoryAddressingMode.Zero_Page_Indexed_Y:
-                    memLocation = (ushort)(memory[PC + 1] + Y);
+                    memLocation = (ushort)(memory[PC + 1] + Y);  // same deal here
+                    if (memLocation > 0xFF)
+                    {
+                        memLocation -= 0x100;
+                    }
                     PC += 2;
                     break;
                 default:
