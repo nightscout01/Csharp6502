@@ -723,7 +723,7 @@ namespace EMU6502
                 Console.WriteLine("LDX");
             }
             ushort memLocation;
-            memLocation = GetMemoryAddress(addressingMode);//memory[PC + 1];  // hopefully we zero extend out to 16 bits like we should
+            memLocation = GetMemoryAddress(addressingMode); // hopefully we zero extend out to 16 bits like we should
             X = memory[memLocation];  // load the data at that zero page memory location into X
             switch (addressingMode)
             {
@@ -774,7 +774,7 @@ namespace EMU6502
                 case MemoryAddressingMode.Absolute:  // a full 16 bit address is specified
                     cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.
                     break;
-                case MemoryAddressingMode.Absolute_Indexed_Y:
+                case MemoryAddressingMode.Absolute_Indexed_X:
                     cycleDelayCounter = 4;  // this one took 4 cycles to operate on the 6502.  (apparently its 5 if a page boundary 
                     // is crossed but idk what that means so...)
                     break;
