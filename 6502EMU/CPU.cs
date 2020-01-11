@@ -214,10 +214,10 @@ namespace EMU6502
                     LDA(MemoryAddressingMode.Absolute_Indexed_Y);
                     break;
                 case 0xA1:
-                    LDA(MemoryAddressingMode.Indirect_Indexed);
+                    LDA(MemoryAddressingMode.Indexed_Indirect);
                     break;
                 case 0xB1:
-                    LDA(MemoryAddressingMode.Indexed_Indirect);
+                    LDA(MemoryAddressingMode.Indirect_Indexed);
                     break;
 
                 // STX
@@ -260,10 +260,10 @@ namespace EMU6502
                     STA(MemoryAddressingMode.Absolute_Indexed_Y);
                     break;
                 case 0x81:
-                    STA(MemoryAddressingMode.Indirect_Indexed);
+                    STA(MemoryAddressingMode.Indexed_Indirect);  // this one should be X indexed
                     break;
                 case 0x91:
-                    STA(MemoryAddressingMode.Indexed_Indirect);
+                    STA(MemoryAddressingMode.Indirect_Indexed);  // this one should be Y indexed
                     break;
 
                 // BIT
@@ -2210,6 +2210,7 @@ namespace EMU6502
                     LSB = memory[memLocation];
                     MSB = memory[memLocation + 1];
                     memLocation = (ushort)(MSB << 8 | LSB);  // it's little endian? so we have to do this, maybe C#'s casting isn't so bad after all.
+                    memLocation += Y; // then we add on the value of the Y register to our address before returning
                     PC += 2;
                     break;
                 case MemoryAddressingMode.Relative:  // instruction contains a signed 8 bit relative offset. Actually maybe let's not use this

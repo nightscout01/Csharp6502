@@ -23,7 +23,7 @@ namespace EMU6502
             {
                 EMU.EmulateCycle();
                 //EMU.DEBUG = true;
-                if (EMU.PC == 0xF24)
+                if (EMU.PC == 0x16CD)
                 {
                     EMU.DEBUG = true;
                   //  Console.ReadLine();
