@@ -9,7 +9,7 @@ namespace EMU6502
 {
     class ConsoleMain
     {
-        private const string FILE_LOCATION = @"C:\Users\night\Downloads\6502_functional_test.bin";  // replace with path to your ROM
+        private const string FILE_LOCATION = @"REPLACE_WITH_DIRECTORY_PATH\6502_functional_test.bin";  // replace with path to your ROM
 
         private const ushort START_LOCATION = 0x400;  // this isn't as rigid as CHIP8, we should really be using the 6502
             // reset vector to determine program start location, using the CPU constructor without the start location argument will use this vector
